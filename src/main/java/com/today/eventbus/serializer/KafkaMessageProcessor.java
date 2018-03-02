@@ -3,6 +3,7 @@ package com.today.eventbus.serializer;
 import com.github.dapeng.core.BeanSerializer;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
+import com.github.dapeng.util.TKafkaTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class KafkaMessageProcessor<T> {
      */
     public T decodeMessage(byte[] msgBytes, BeanSerializer beanSerializer) throws TException {
         logger.info("fetch event body: ");
-        TKafkaTransport kafkaTransport = new TKafkaTransport(msgBytes, TKafkaTransport.IOType.Read);
+        TKafkaTransport kafkaTransport = new TKafkaTransport(msgBytes, TKafkaTransport.Type.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
 
         T event = (T) beanSerializer.read(protocol);
@@ -57,7 +58,7 @@ public class KafkaMessageProcessor<T> {
      * @return
      */
     private T parseMessage(byte[] bytes) throws TException {
-        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.IOType.Read);
+        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.Type.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
         T event = beanSerializer.read(protocol);
         return event;
@@ -75,7 +76,7 @@ public class KafkaMessageProcessor<T> {
         beanSerializer = assemblyBeanSerializer(eventType);
 
         byte[] bytes = new byte[8192];
-        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.IOType.Write);
+        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.Type.Write);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
         kafkaTransport.setEventType(eventType);
         beanSerializer.write(event, protocol);

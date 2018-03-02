@@ -1,6 +1,10 @@
 package com.today.eventbus;
 
 
+import com.github.dapeng.core.BeanSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -11,6 +15,9 @@ import java.util.List;
  * @date 2018年03月02日 上午1:18
  */
 public class ConsumerEndpoint {
+
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
 
     private String id;
 
@@ -26,6 +33,8 @@ public class ConsumerEndpoint {
     private Object bean;
 
     private List<Class<?>> parameterTypes;
+
+    private String serializerType;
 
     public String getGroupId() {
         return groupId;
@@ -81,5 +90,25 @@ public class ConsumerEndpoint {
 
     public void setParameterTypes(List<Class<?>> parameterTypes) {
         this.parameterTypes = parameterTypes;
+    }
+
+    /**
+     * 根据 serializer 全限定名 反射获取 其对象
+     *
+     * @return
+     * @throws ClassNotFoundException
+     */
+    public BeanSerializer getSerializerType() throws Exception {
+        BeanSerializer serializer;
+        try {
+            serializer = (BeanSerializer) this.getClass().getClassLoader().loadClass(serializerType).newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            throw new Exception(e.getMessage(), e);
+        }
+        return serializer;
+    }
+
+    public void setSerializerType(String serializerType) {
+        this.serializerType = serializerType;
     }
 }

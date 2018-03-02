@@ -1,5 +1,6 @@
 package com.today.eventbus;
 
+import com.github.dapeng.core.BeanSerializer;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.util.SoaSystemEnvProperties;
 import com.today.eventbus.config.KafkaConfigBuilder;
@@ -13,6 +14,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -106,28 +108,35 @@ public class MsgKafkaConsumer extends Thread {
 
         List<Class<?>> parameterTypes = consumer.getParameterTypes();
 
+        long count = parameterTypes.stream()
+                .filter(param -> param.getName().equals(eventType))
+                .count();
 
+        if (count > 0) {
+            byte[] eventBinary = processor.getEventBinary();
 
-        byte[] eventBinary = processor.getEventBinary();
+            Object eventIface = null;
+            try {
+                eventIface = processor.decodeMessage(eventBinary, consumer.getSerializerType());
+            } catch (TException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                logger.error("实例化beanSerializer出错，可能定义BeanSerializer 全限定名配置写错");
+            }
 
-        Object eventIface = null;
-        try {
-            eventIface = BeanSerializerRegister.decodeMessage(eventType, eventBinary);
-        } catch (TException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            consumer.getMethod().invoke(consumer.getBean(), eventIface);
-            logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件", e);
+            try {
+                consumer.getMethod().invoke(consumer.getBean(), eventIface);
+                logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalArgumentException e) {
+                logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件", e);
+            }
+        } else {
+            logger.info("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
         }
     }
-
-
 }
