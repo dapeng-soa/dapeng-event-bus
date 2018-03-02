@@ -1,10 +1,10 @@
 package com.today.eventbus;
 
-import com.github.dapeng.message.config.KafkaConfigBuilder;
-import com.github.dapeng.message.serializer.KafkaMessageProcessor;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.util.SoaSystemEnvProperties;
+import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.BeanSerializerRegister;
+import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

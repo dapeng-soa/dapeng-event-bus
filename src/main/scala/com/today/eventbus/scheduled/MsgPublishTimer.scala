@@ -28,11 +28,14 @@ class MsgPublishTimer(topic: String, host: String, transId: String, msgDao: Even
     * fetch message from database , then send to kafka broker
     */
   def doPublishMessages(): Unit = {
-    logger.info("begin the publish_msg time scheduler ")
+    if (logger.isDebugEnabled()) {
+      logger.debug("begin the publish_msg time scheduler ")
+    }
 
     //    val eventStores: List[EventStore] = eventMsgDao.listMessages
     //    if (!eventStores.isEmpty) {
     //      eventStores.foreach(es => {
+
     val counter = new AtomicInteger(100)
     while (counter.get() == 100) {
       counter.set(0)
@@ -45,9 +48,12 @@ class MsgPublishTimer(topic: String, host: String, transId: String, msgDao: Even
       })
     }
 
+
     //        })
     //      })
-    logger.info("send listMessages successful ")
+    if (logger.isDebugEnabled()) {
+      logger.debug("send listMessages successful ")
+    }
     //    } else {
     //      logger.debug("database no message to process ")
     //    }
