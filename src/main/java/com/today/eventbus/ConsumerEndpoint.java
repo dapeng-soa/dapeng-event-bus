@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * 描述:
+ * 描述: 业务关心 consumer 上下文
  *
  * @author hz.lei
  * @date 2018年03月02日 上午1:18
@@ -34,7 +34,7 @@ public class ConsumerEndpoint {
 
     private List<Class<?>> parameterTypes;
 
-    private String serializerType;
+    private String serializer;
 
     public String getGroupId() {
         return groupId;
@@ -99,16 +99,16 @@ public class ConsumerEndpoint {
      * @throws ClassNotFoundException
      */
     public BeanSerializer getSerializerType() throws Exception {
-        BeanSerializer serializer;
+        BeanSerializer beanSerializer;
         try {
-            serializer = (BeanSerializer) this.getClass().getClassLoader().loadClass(serializerType).newInstance();
+            beanSerializer = (BeanSerializer) this.getClass().getClassLoader().loadClass(serializer).newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
             throw new Exception(e.getMessage(), e);
         }
-        return serializer;
+        return beanSerializer;
     }
 
-    public void setSerializerType(String serializerType) {
-        this.serializerType = serializerType;
+    public void setSerializer(String serializer) {
+        this.serializer = serializer;
     }
 }

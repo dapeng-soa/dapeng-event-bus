@@ -19,7 +19,7 @@ public @interface KafkaListener {
 
     String groupId();
 
-    String serializerType();
+    String serializer();
 
 
 }
