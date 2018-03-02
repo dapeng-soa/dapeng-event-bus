@@ -1,10 +1,8 @@
 package com.today.eventbus;
 
-import com.github.dapeng.core.BeanSerializer;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.util.SoaSystemEnvProperties;
 import com.today.eventbus.config.KafkaConfigBuilder;
-import com.today.eventbus.serializer.BeanSerializerRegister;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -14,7 +12,6 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.Assert;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
