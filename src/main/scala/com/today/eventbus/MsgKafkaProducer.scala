@@ -2,7 +2,7 @@ package com.today.eventbus
 
 import java.util
 
-import com.github.dapeng.message.config.KafkaConfigBuilder
+import com.today.eventbus.config.KafkaConfigBuilder
 import com.today.eventbus.dao.EventStore
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.{ByteArraySerializer, LongSerializer}

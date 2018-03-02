@@ -1,6 +1,5 @@
 package com.today.eventbus;
 
-import com.github.dapeng.message.consumer.kafka.EventKafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -19,7 +18,7 @@ import java.util.Map;
  */
 public class KafkaListenerRegistrar implements InitializingBean {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventKafkaConsumer.class);
+    private static final Logger logger = LoggerFactory.getLogger(KafkaListenerRegistrar.class);
     private final List<ConsumerEndpoint> endpointDescriptors = new ArrayList<>();
 
     public static final Map<String, MsgKafkaConsumer> TOPIC_CONSUMERS = new HashMap<>();

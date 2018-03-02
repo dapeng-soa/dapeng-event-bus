@@ -1,8 +1,6 @@
 package com.today.eventbus.serializer;
 
 import com.github.dapeng.core.BeanSerializer;
-import com.github.dapeng.message.config.MessageInfo;
-import com.github.dapeng.message.serializer.TKafkaTransport;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
 import org.slf4j.Logger;
@@ -16,7 +14,7 @@ import org.slf4j.LoggerFactory;
  */
 public class KafkaMessageProcessor<T> {
 
-    private Logger LOGGER = LoggerFactory.getLogger(com.github.dapeng.message.serializer.KafkaMessageProcessor.class);
+    private Logger logger = LoggerFactory.getLogger(KafkaMessageProcessor.class);
 
     private BeanSerializer<T> beanSerializer;
     private byte[] realMessage;
@@ -24,12 +22,12 @@ public class KafkaMessageProcessor<T> {
     public T dealMessage(byte[] message, ClassLoader classLoader) throws TException {
 
         String eventType = getEventType(message);
-        LOGGER.info("fetch eventType: {}", eventType);
+        logger.info("fetch eventType: {}", eventType);
         beanSerializer = assemblyBeanSerializer(eventType, classLoader);
-        MessageInfo<T> messageInfo = parseMessage(message);
+        T event = parseMessage(message);
 
-        T event = messageInfo.getEvent();
-        LOGGER.info("dealMessage:event {}", event.toString());
+        logger.info("dealMessage:event {}", event.toString());
+
         return event;
     }
 
@@ -42,13 +40,13 @@ public class KafkaMessageProcessor<T> {
      * @throws TException
      */
     public T decodeMessage(byte[] msgBytes, BeanSerializer beanSerializer) throws TException {
-        LOGGER.info("fetch event body: ");
-        TKafkaTransport kafkaTransport = new TKafkaTransport(msgBytes, TKafkaTransport.Type.Read);
+        logger.info("fetch event body: ");
+        TKafkaTransport kafkaTransport = new TKafkaTransport(msgBytes, TKafkaTransport.IOType.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
 
         T event = (T) beanSerializer.read(protocol);
 
-        LOGGER.info("dealMessage:event {}", event.toString());
+        logger.info("dealMessage:event {}", event.toString());
         return event;
     }
 
@@ -58,12 +56,11 @@ public class KafkaMessageProcessor<T> {
      *
      * @return
      */
-    private MessageInfo<T> parseMessage(byte[] bytes) throws TException {
-        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.Type.Read);
+    private T parseMessage(byte[] bytes) throws TException {
+        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.IOType.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
-        String eventType = kafkaTransport.getEventType();
         T event = beanSerializer.read(protocol);
-        return new MessageInfo<>(eventType, event);
+        return event;
     }
 
     /**
@@ -78,7 +75,7 @@ public class KafkaMessageProcessor<T> {
         beanSerializer = assemblyBeanSerializer(eventType);
 
         byte[] bytes = new byte[8192];
-        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.Type.Write);
+        TKafkaTransport kafkaTransport = new TKafkaTransport(bytes, TKafkaTransport.IOType.Write);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
         kafkaTransport.setEventType(eventType);
         beanSerializer.write(event, protocol);
@@ -132,15 +129,15 @@ public class KafkaMessageProcessor<T> {
 
             return beanSerializer;
         } catch (StringIndexOutOfBoundsException e) {
-            LOGGER.error("组装权限定名出错!!");
-            LOGGER.error(e.getMessage(), e);
+            logger.error("组装权限定名出错!!");
+            logger.error(e.getMessage(), e);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            LOGGER.error("找不到对应的消息解码器 {}", eventSerializerName);
-            LOGGER.error(e.getMessage(), e);
+            logger.error("找不到对应的消息解码器 {}", eventSerializerName);
+            logger.error(e.getMessage(), e);
         }
         return null;
     }
@@ -158,15 +155,15 @@ public class KafkaMessageProcessor<T> {
 
             return beanSerializer;
         } catch (StringIndexOutOfBoundsException e) {
-            LOGGER.error("组装权限定名出错!!");
-            LOGGER.error(e.getMessage(), e);
+            logger.error("组装权限定名出错!!");
+            logger.error(e.getMessage(), e);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            LOGGER.error("找不到对应的消息解码器 {}", eventSerializerName);
-            LOGGER.error(e.getMessage(), e);
+            logger.error("找不到对应的消息解码器 {}", eventSerializerName);
+            logger.error(e.getMessage(), e);
         }
         return null;
     }

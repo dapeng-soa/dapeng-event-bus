@@ -2,7 +2,6 @@ package com.today.eventbus.serializer;
 
 import com.github.dapeng.core.BeanSerializer;
 import com.github.dapeng.org.apache.thrift.TException;
-import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.springframework.util.Assert;
 
 import java.util.Map;
