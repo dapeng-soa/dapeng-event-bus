@@ -1,4 +1,4 @@
-package com.today.eventbus.dao
+package com.today.eventbus
 
 import java.sql.Timestamp
 
