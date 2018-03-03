@@ -27,14 +27,8 @@ trait AbstractEventBus {
 
   @throws[TException]
   def fireEvent(event: Any): Unit = {
-    try {
-      dispatchEvent(event)
-      persistenceEvent(event)
-    } catch {
-      case e: Exception =>
-        logger.error(e.getMessage, e)
-    }
-
+    dispatchEvent(event)
+    persistenceEvent(event)
   }
 
   /**
