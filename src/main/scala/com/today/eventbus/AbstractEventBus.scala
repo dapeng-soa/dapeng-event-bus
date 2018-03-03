@@ -1,11 +1,13 @@
 package com.today.eventbus
 
+import java.lang.reflect.Field
 import javax.sql.DataSource
 
 import com.github.dapeng.org.apache.thrift.TException
 import com.today.eventbus.serializer.KafkaMessageProcessor
 import org.slf4j.LoggerFactory
 import wangzx.scala_commons.sql._
+
 import scala.beans.BeanProperty
 
 /**
@@ -54,12 +56,31 @@ trait AbstractEventBus {
     val processor = new KafkaMessageProcessor[Any]
     val bytes: Array[Byte] = processor.buildMessageByte(event)
     val eventType = event.getClass.getName
-
-    val executeSql = sql"INSERT INTO  common_event set event_type=${eventType}, event_binary=${bytes}"
+    // fetch id
+    val id = fetchMsgId(event)
+    val executeSql = sql"INSERT INTO  common_event set id=${id} event_type=${eventType}, event_binary=${bytes}"
     dataSource.executeUpdate(executeSql)
+
     logger.info("save message successful ")
   }
 
+  /**
+    * 反射拿到消息第一个id参数，作为存储数据库的 唯一 id
+    *
+    * @param event
+    * @return
+    */
+  private def fetchMsgId(event: Any): Long = {
+    try {
+      val field: Field = event.getClass.getDeclaredField("id")
+      field.setAccessible(true)
+      field.get(event).toString.toLong
+    } catch {
+      case e: Exception =>
+        logger.error("获取消息id失败，请检查事件是否带有唯一id，以及字段名是否为id")
+        throw e
+    }
+  }
 
   /**
     * scala object 基于Spring的初始化方法
