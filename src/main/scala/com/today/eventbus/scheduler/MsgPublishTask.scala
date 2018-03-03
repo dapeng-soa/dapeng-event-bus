@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import wangzx.scala_commons.sql._
 
 /**
@@ -14,11 +14,12 @@ import wangzx.scala_commons.sql._
   * @author hz.lei
   * @date 2018年02月28日 下午3:00
   */
+//TODO comments for transId
 class MsgPublishTask(topic: String,
                      kafkaHost: String,
                      transId: String,
                      dataSource: DataSource) {
-  val logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
+  val logger: Logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
   var producer = MsgKafkaProducer(kafkaHost, transId)
 
   /**
@@ -26,9 +27,10 @@ class MsgPublishTask(topic: String,
     */
   def doPublishMessages(): Unit = {
     if (logger.isDebugEnabled()) {
-      logger.debug("begin the publish_msg time scheduler ")
+      logger.debug("begin to publish messages to kafka")
     }
 
+    //TODO comments
     val counter = new AtomicInteger(100)
     while (counter.get() == 100) {
       counter.set(0)
@@ -42,7 +44,7 @@ class MsgPublishTask(topic: String,
     }
 
     if (logger.isDebugEnabled()) {
-      logger.debug("send listMessages successful ")
+      logger.debug("end publish messages to kafka")
     }
   }
 
