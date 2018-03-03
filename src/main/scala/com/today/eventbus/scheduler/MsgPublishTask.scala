@@ -9,12 +9,13 @@ import wangzx.scala_commons.sql._
 
 /**
   *
-  * 描述: 事件定时任务
+  * 描述: 事件定时任务，轮询数据库，发送消息 to kafka
+  *
+  * transId: kafka消息对事务的支持前提，需要每一个生产者实例有不同的事务ID，唯一
   *
   * @author hz.lei
   * @date 2018年02月28日 下午3:00
   */
-//TODO comments for transId
 class MsgPublishTask(topic: String,
                      kafkaHost: String,
                      transId: String,
