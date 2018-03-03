@@ -19,14 +19,6 @@ trait AbstractEventBus {
 
   private val logger = LoggerFactory.getLogger(classOf[AbstractEventBus])
 
-  /**
-    * scala object 基于Spring的初始化方法
-    *
-    * @return
-    */
-  def getInstance: this.type
-
-
   @BeanProperty
   var dataSource: DataSource = _
 
@@ -69,4 +61,10 @@ trait AbstractEventBus {
   }
 
 
+  /**
+    * scala object 基于Spring的初始化方法
+    *
+    * @return
+    */
+  def getInstance: this.type
 }
