@@ -58,17 +58,27 @@ public class MsgHandleUtil {
     public static KafkaMsgInfo decodeMsg(byte[] msgBinary) throws TException {
         TKafkaTransport kafkaTransport = new TKafkaTransport(msgBinary, TKafkaTransport.Type.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
-        // fetch eventType
-        String eventType = kafkaTransport.getEventType();
+        String eventType = null;
+        try {
+            // fetch eventType
+            eventType = kafkaTransport.getEventType();
+        } catch (Exception e) {
+            logger.info("获取eventType失败，可能该条消息不是合适的消息！");
+            logger.error(e.getMessage(), e);
+        }
+        if (eventType != null) {
 
-        BeanSerializer serializer = getSerializerByType(eventType);
-
-        // fetch event real message
-        Object event = serializer.read(protocol);
-
-        KafkaMsgInfo msgInfo = new KafkaMsgInfo(eventType, event);
-
-        return msgInfo;
+            try {
+                BeanSerializer serializer = getSerializerByType(eventType);
+                // fetch event real message
+                Object event = serializer.read(protocol);
+                KafkaMsgInfo msgInfo = new KafkaMsgInfo(eventType, event);
+                return msgInfo;
+            } catch (TException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     /**
