@@ -15,12 +15,7 @@ import java.util.List;
  * @date 2018年03月02日 上午1:18
  */
 public class ConsumerEndpoint {
-
-    private Logger logger = LoggerFactory.getLogger(getClass());
-
-
     private String id;
-
 
     private String groupId;
 
