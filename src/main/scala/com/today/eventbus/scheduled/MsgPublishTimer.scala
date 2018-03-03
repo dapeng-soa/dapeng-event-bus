@@ -3,8 +3,7 @@ package com.today.eventbus.scheduled
 import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
-import com.today.eventbus.MsgKafkaProducer
-import com.today.eventbus.dao.{/*EventMsgDao, */EventStore}
+import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory
 import wangzx.scala_commons.sql._
 
