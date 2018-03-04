@@ -22,7 +22,9 @@ public @interface KafkaListener {
     String serializer();
 
     /**
-     * hosts for kafka cluster, which is a key for SystemProperties or SystemEnv
+     * hosts for kafka cluster,  users should set the real host by
+     * System.setProperty(kafkaHostKey,"xxx") or export the env with the key.
+     *
      * @return
      */
     String kafkaHostKey() default "dapeng.kafka.consumer.host";
