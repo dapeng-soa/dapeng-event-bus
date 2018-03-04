@@ -27,7 +27,7 @@ import java.util.Properties;
  */
 public class MsgKafkaConsumer extends Thread {
     private static final Logger logger = LoggerFactory.getLogger(MsgKafkaConsumer.class);
-    private List<ConsumerEndpoint> bizConsumers = new ArrayList();
+    private List<ConsumerEndpoint> bizConsumers = new ArrayList<>();
     private String groupId;
     private String topic;
     private String kafkaConnect;
