@@ -2,7 +2,6 @@ package com.today.eventbus.spring;
 
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.annotation.KafkaListener;
-import com.today.eventbus.annotation.ListenerCondition;
 import com.today.eventbus.utils.Contans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,9 +92,9 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
             for (Map.Entry<Method, Set<KafkaListener>> entry : annotatedMethods.entrySet()) {
                 Method method = entry.getKey();
                 for (KafkaListener listener : entry.getValue()) {
-                    ListenerCondition listenerMethodInfo = createListenerInfo(listener);
+                    KafkaListenerInfo listenerMethodInfo = createListenerInfo(listener);
                     if (hasClassListeners) {
-                        ListenerCondition listenerClassinfo = createListenerInfo(classLevelListener.get());
+                        KafkaListenerInfo listenerClassinfo = createListenerInfo(classLevelListener.get());
                         processKafkaListener(listenerClassinfo, listenerMethodInfo, method, bean, beanName);
                     } else {
                         processKafkaListener(null, listenerMethodInfo, method, bean, beanName);
@@ -145,14 +144,14 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
      * @param bean
      * @param beanName
      */
-    protected void processKafkaListener(ListenerCondition classinfo, ListenerCondition methodInfo, Method method, Object bean, String beanName) {
+    protected void processKafkaListener(KafkaListenerInfo classinfo, KafkaListenerInfo methodInfo, Method method, Object bean, String beanName) {
         Method methodToUse = checkProxy(method, bean);
         ConsumerEndpoint endpoint = new ConsumerEndpoint();
         endpoint.setMethod(methodToUse);
         endpoint.setBean(bean);
         endpoint.setParameterTypes(Arrays.asList(method.getParameterTypes()));
 
-        ListenerCondition combineInfo = null;
+        KafkaListenerInfo combineInfo = null;
         if (classinfo != null) {
             combineInfo = combine(classinfo, methodInfo);
         } else {
@@ -207,8 +206,8 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
      *
      * @param listener
      */
-    private ListenerCondition createListenerInfo(KafkaListener listener) {
-        ListenerCondition condition = new ListenerCondition();
+    private KafkaListenerInfo createListenerInfo(KafkaListener listener) {
+        KafkaListenerInfo condition = new KafkaListenerInfo();
         condition.setTopic(listener.topic());
         condition.setGroupId(listener.groupId());
         condition.setSerializer(listener.serializer());
@@ -217,8 +216,8 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
     }
 
 
-    private ListenerCondition combine(ListenerCondition classInfo, ListenerCondition methodInfo) {
-        ListenerCondition combine = new ListenerCondition();
+    private KafkaListenerInfo combine(KafkaListenerInfo classInfo, KafkaListenerInfo methodInfo) {
+        KafkaListenerInfo combine = new KafkaListenerInfo();
         // topic
         if (!methodInfo.getTopic().isEmpty()) {
             combine.setTopic(methodInfo.getTopic());

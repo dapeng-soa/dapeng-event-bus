@@ -1,4 +1,4 @@
-package com.today.eventbus.annotation;
+package com.today.eventbus.spring;
 
 
 /**
@@ -7,7 +7,7 @@ package com.today.eventbus.annotation;
  * @author hz.lei
  * @date 2018年03月04日 下午8:25
  */
-public class ListenerCondition {
+public class KafkaListenerInfo {
     private String topic;
 
     private String groupId;
