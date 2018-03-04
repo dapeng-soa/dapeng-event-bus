@@ -10,18 +10,18 @@ import java.lang.annotation.*;
  * @author hz.lei
  * @date 2018年03月02日 上午12:48
  */
-@Target({ElementType.METHOD,ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
 public @interface KafkaListener {
 
-    String topic();
+    String topic() default "";
 
 
-    String groupId();
+    String groupId() default "";
 
-    String serializer();
+    String serializer() default "";
 
     /**
      * hosts for kafka cluster,  users should set the real host by
