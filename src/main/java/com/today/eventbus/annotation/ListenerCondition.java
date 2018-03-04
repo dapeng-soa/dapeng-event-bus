@@ -1,7 +1,5 @@
 package com.today.eventbus.annotation;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
  * 描述:
@@ -49,53 +47,5 @@ public class ListenerCondition {
     public void setKafkaHostKey(String kafkaHostKey) {
         this.kafkaHostKey = kafkaHostKey;
     }
-
-    public ListenerCondition(Builder builder) {
-        this.topic = builder.topic;
-        this.groupId = builder.groupId;
-        this.serializer = builder.serializer;
-        this.kafkaHostKey = builder.kafkaHostKey;
-    }
-
-    public ListenerCondition() {
-    }
-
-    public static class Builder {
-
-        private String topic;
-
-        private String groupId;
-
-        private String serializer;
-
-        private String kafkaHostKey;
-
-
-        public Builder topic(String topic) {
-            this.topic = topic;
-            return this;
-        }
-
-        public Builder groupId(String groupId) {
-            this.groupId = groupId;
-            return this;
-        }
-
-        public Builder serializer(String serializer) {
-            this.serializer = serializer;
-            return this;
-        }
-
-        public Builder kafkaHostKey(String kafkaHostKey) {
-            this.kafkaHostKey = kafkaHostKey;
-            return this;
-        }
-
-        public ListenerCondition build() {
-            return new ListenerCondition(this);
-        }
-
-    }
-
 
 }
