@@ -10,15 +10,14 @@ import org.slf4j.{Logger, LoggerFactory}
 /**
   *
   * 描述: event kafka producer
+  * @param serverHosts kafka cluster:127.0.0.1:9091,127.0.0.1:9092
   *
   * @author hz.lei
   * @date 2018年02月28日 下午3:17
   */
-case class MsgKafkaProducer(serverHost: String, transactionId: String) {
+case class MsgKafkaProducer(serverHosts: String, transactionId: String) {
   private val logger: Logger = LoggerFactory.getLogger(classOf[MsgKafkaProducer])
-  /**
-    * 127.0.0.1:9091,127.0.0.1:9092
-    */
+
   initTransProducer(transactionId)
 
   var producer: KafkaProducer[Long, Array[Byte]] = _
@@ -33,7 +32,7 @@ case class MsgKafkaProducer(serverHost: String, transactionId: String) {
     val properties = builder
       .withKeySerializer(classOf[LongSerializer])
       .withValueSerializer(classOf[ByteArraySerializer])
-      .bootstrapServers(serverHost)
+      .bootstrapServers(serverHosts)
       .withTransactions(transId)
       .build
 
