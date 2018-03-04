@@ -12,17 +12,19 @@ import wangzx.scala_commons.sql._
   *
   * 描述: 事件定时任务，轮询数据库，发送消息 to kafka
   *
+  * @param kafkaHosts kafka cluster:127.0.0.1:9091,127.0.0.1:9092
+  *
   * @author hz.lei
   * @date 2018年02月28日 下午3:00
   */
 class MsgPublishTask(topic: String,
-                     kafkaHost: String,
+                     kafkaHosts: String,
                      tidPrefix: String,
                      dataSource: DataSource) {
   private val logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
   //transId: kafka消息对事务的支持前提，需要每一个生产者实例有不同的事务ID，全局唯一
   private val tid = tidPrefix + UUID.randomUUID().toString
-  private val producer = MsgKafkaProducer(kafkaHost, tid)
+  private val producer = new MsgKafkaProducer(kafkaHosts, tid)
   logger.warn("Kafka producer transactionId:" + tid)
 
   /**

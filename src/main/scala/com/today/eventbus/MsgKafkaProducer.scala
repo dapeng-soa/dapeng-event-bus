@@ -10,12 +10,13 @@ import org.slf4j.{Logger, LoggerFactory}
 /**
   *
   * 描述: event kafka producer
+  *
   * @param serverHosts kafka cluster:127.0.0.1:9091,127.0.0.1:9092
   *
   * @author hz.lei
   * @date 2018年02月28日 下午3:17
   */
-case class MsgKafkaProducer(serverHosts: String, transactionId: String) {
+class MsgKafkaProducer(serverHosts: String, transactionId: String) {
   private val logger: Logger = LoggerFactory.getLogger(classOf[MsgKafkaProducer])
 
   initTransProducer(transactionId)
