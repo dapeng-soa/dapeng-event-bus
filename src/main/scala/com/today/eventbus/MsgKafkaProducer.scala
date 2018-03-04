@@ -37,6 +37,7 @@ case class MsgKafkaProducer(serverHost: String, transactionId: String) {
       .withValueSerializer(classOf[ByteArraySerializer])
       .bootstrapServers(kafkaConnect)
       .withTransactions(transId)
+      .withIdempotence("true")
       .build
 
     producer = new KafkaProducer[Long, Array[Byte]](properties)

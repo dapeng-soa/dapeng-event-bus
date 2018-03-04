@@ -153,6 +153,11 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
+        public ProducerConfiguration withIdempotence(String flag) {
+            properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, flag);
+            return this;
+        }
+
 
         @Override
         void validate() {
