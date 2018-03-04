@@ -16,8 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author hz.lei
  * @date 2018年03月03日 下午3:56
  */
-
-
 public class MsgDecoder {
 
     private static Logger logger = LoggerFactory.getLogger(MsgDecoder.class);
@@ -28,7 +26,7 @@ public class MsgDecoder {
     /**
      * 注册事件解码器
      *
-     * @param eventType 事件类型, 也就是具体业务事件的类名(包括包名)
+     * @param eventType  事件类型, 也就是具体业务事件的类名(包括包名)
      * @param serializer 事件解码器
      */
     public static void register(String eventType, BeanSerializer serializer) {
@@ -42,25 +40,23 @@ public class MsgDecoder {
 
 
     /**
-     * 传入 eventType的全限定名，获取对应的序列化器，进行消息序列化，并返回消息体。
+     * 进行消息序列化，并返回消息体。
      *
-     * @param
      * @param msgBinary
      * @return
      * @throws TException
      */
-    public static KafkaMsgInfo decodeMsg(byte[] msgBinary) {
+    public static EventMsgInfo decodeMsg(byte[] msgBinary) {
         TKafkaTransport kafkaTransport = new TKafkaTransport(msgBinary, TKafkaTransport.Type.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
-        String eventType = null;
+
         try {
             // fetch eventType
-            eventType = kafkaTransport.getEventType();
-            BeanSerializer serializer = getSerializerByType(eventType);
+            String eventType = kafkaTransport.getEventType();
+            BeanSerializer serializer = getDecoderByType(eventType);
             // fetch event real message
             Object event = serializer.read(protocol);
-            KafkaMsgInfo msgInfo = new KafkaMsgInfo(eventType, event);
-            return msgInfo;
+            return new EventMsgInfo(eventType, event);
         } catch (Exception e) {
             logger.info("获取eventType失败，可能该条消息不是合适的消息！");
             logger.error(e.getMessage(), e);
@@ -74,7 +70,7 @@ public class MsgDecoder {
      *
      * @throws TException 可能初始化时 没有注册序列化器
      */
-    private static BeanSerializer getSerializerByType(String eventType) throws TException {
+    private static BeanSerializer getDecoderByType(String eventType) throws TException {
         BeanSerializer beanSerializer = beanSerializers.get(eventType);
         if (beanSerializer == null) {
             throw new TException("eventType: [ " + eventType + " ]对应的序列化器未注册，请检查");
@@ -82,11 +78,11 @@ public class MsgDecoder {
         return beanSerializer;
     }
 
-    public static class KafkaMsgInfo {
+    public static class EventMsgInfo {
         private String eventType;
         private Object event;
 
-        public KafkaMsgInfo(String eventType, Object event) {
+        public EventMsgInfo(String eventType, Object event) {
             this.eventType = eventType;
             this.event = event;
         }
