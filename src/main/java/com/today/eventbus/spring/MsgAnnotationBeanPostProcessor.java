@@ -82,7 +82,7 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
          */
         if (hasClassListeners && annotatedMethods.isEmpty()) {
             throw new IllegalArgumentException("@KafkaListener found on class type , " +
-                    "but no @KafkaListener found on the method ,pleanse set it on the method");
+                    "but no @KafkaListener found on the method ,please set it on the method");
         }
 
         if (annotatedMethods.isEmpty()) {
@@ -136,24 +136,23 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
     }
 
     /**
-     * 处理注解信息
+     * 处理有 @KafkaListener 注解的 方法上注解元信息，封装成 consumerEndpoint，注册
      *
-     * @param classinfo
      * @param methodInfo
      * @param method
      * @param bean
      * @param beanName
      */
-    protected void processKafkaListener(KafkaListenerInfo classinfo, KafkaListenerInfo methodInfo, Method method, Object bean, String beanName) {
+    protected void processKafkaListener(KafkaListenerInfo classInfo, KafkaListenerInfo methodInfo, Method method, Object bean, String beanName) {
         Method methodToUse = checkProxy(method, bean);
         ConsumerEndpoint endpoint = new ConsumerEndpoint();
         endpoint.setMethod(methodToUse);
         endpoint.setBean(bean);
         endpoint.setParameterTypes(Arrays.asList(method.getParameterTypes()));
 
-        KafkaListenerInfo combineInfo = null;
-        if (classinfo != null) {
-            combineInfo = combine(classinfo, methodInfo);
+        KafkaListenerInfo combineInfo;
+        if (classInfo != null) {
+            combineInfo = combine(classInfo, methodInfo);
         } else {
             combineInfo = methodInfo;
         }
@@ -215,7 +214,15 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         return condition;
     }
 
-
+    /**
+     * 类注解与方法注解的合并操作，逻辑如下。
+     * 类注解与方法注解属性都存在 -> 方法注解属性优先，如果方法注解没此属性，选择类注解
+     * serializer除外，它是一个拼接操作 ->  com.demo +  UserCreatedEvent
+     *
+     * @param classInfo
+     * @param methodInfo
+     * @return
+     */
     private KafkaListenerInfo combine(KafkaListenerInfo classInfo, KafkaListenerInfo methodInfo) {
         KafkaListenerInfo combine = new KafkaListenerInfo();
         // topic
