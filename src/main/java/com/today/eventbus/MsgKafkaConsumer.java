@@ -1,7 +1,6 @@
 package com.today.eventbus;
 
 import com.github.dapeng.org.apache.thrift.TException;
-import com.github.dapeng.util.SoaSystemEnvProperties;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.CommitFailedException;
@@ -34,8 +33,7 @@ public class MsgKafkaConsumer extends Thread {
     protected KafkaConsumer<Long, byte[]> consumer;
 
     /**
-     * host1:port1,host2:port2,...
-     *
+     * @param kafkaHost host1:port1,host2:port2,...
      * @param groupId
      * @param topic
      */
@@ -46,7 +44,7 @@ public class MsgKafkaConsumer extends Thread {
         this.init();
     }
 
-    public void init() {
+    private void init() {
         logger.info(new StringBuffer("[KafkaConsumer] [init] ")
                 .append("kafkaConnect(").append(kafkaConnect)
                 .append(") groupId(").append(groupId)
@@ -118,23 +116,22 @@ public class MsgKafkaConsumer extends Thread {
         if (count > 0) {
             byte[] eventBinary = processor.getEventBinary();
 
-            Object eventIface = null;
             try {
-                eventIface = processor.decodeMessage(eventBinary, consumer.getSerializerType());
-            } catch (TException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-                logger.error("实例化beanSerializer出错，可能定义BeanSerializer 全限定名配置写错");
-            }
-
-            try {
-                consumer.getMethod().invoke(consumer.getBean(), eventIface);
+                Object event = processor.decodeMessage(eventBinary, consumer.getEventSerializer());
+                consumer.getMethod().invoke(consumer.getBean(), event);
                 logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
             } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
-                logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件", e);
+                logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
+            } catch (TException e) {
+                logger.error(e.getMessage(), e);
+                logger.error("反序列化事件" + eventType + "出错");
+            } catch (InstantiationException e) {
+                logger.error(e.getMessage(), e);
+                logger.error("实例化事件" + eventType + "对应的编解码器失败");
+            } catch (ClassNotFoundException e) {
+                logger.error(e.getMessage(), e);
+                logger.error("找不到事件" + eventType + "对应的编解码器");
             }
-
         } else {
             logger.info("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
         }
