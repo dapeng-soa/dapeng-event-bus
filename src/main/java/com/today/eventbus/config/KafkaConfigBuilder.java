@@ -148,8 +148,29 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
+        /**
+         * 若要开启事务支持，除了配置transId外，还要配置生产者开启幂等
+         *
+         * @param transactionId
+         * @return
+         */
         public ProducerConfiguration withTransactions(final String transactionId) {
             properties.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, transactionId);
+            return this;
+        }
+
+        /**
+         * 当设置为‘true’，生产者将确保每个消息正好一次复制写入到stream。
+         * 如果‘false’，由于broker故障，生产者重试。即，可以在流中写入重试的消息。此设置默认是‘false’。
+         * 请注意，启用幂等式需要将max.in.flight.requests.per.connection设置为1或者等于5(默认)，
+         * ，重试次数不能为零。另外acks必须设置为“all”。如果这些值保持默认值，我们将覆盖默认值。
+         * 如果这些值设置为与幂等生成器不兼容的值，则将抛出一个ConfigException异常。
+         *
+         * @param flag
+         * @return
+         */
+        public ProducerConfiguration withIdempotence(String flag) {
+            properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, flag);
             return this;
         }
 
