@@ -36,6 +36,7 @@ public class KafkaListenerRegistrar implements InitializingBean {
     public void addConsumer(ConsumerEndpoint endpoint) {
         String groupId = endpoint.getGroupId();
         String topic = endpoint.getTopic();
+        String kafkaHost = endpoint.getKafkaHost();
         try {
             // 默认 group id
             String className = endpoint.getBean().getClass().getName();
@@ -46,7 +47,7 @@ public class KafkaListenerRegistrar implements InitializingBean {
                 TOPIC_CONSUMERS.get(consumerKey).addCustomer(endpoint);
             } else {
                 // KafkaConsumer consumer = new KafkaConsumer(groupId, topic);
-                MsgKafkaConsumer consumer = new MsgKafkaConsumer(groupId, topic);
+                MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost,groupId, topic);
                 consumer.addCustomer(endpoint);
                 TOPIC_CONSUMERS.put(consumerKey, consumer);
             }
