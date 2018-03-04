@@ -1,8 +1,9 @@
 package com.today.eventbus.spring;
 
 import com.today.eventbus.ConsumerEndpoint;
-import com.today.eventbus.annotation.KafkaHandler;
 import com.today.eventbus.annotation.KafkaListener;
+import com.today.eventbus.annotation.ListenerCondition;
+import com.today.eventbus.utils.Contans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
@@ -66,9 +67,9 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         logger.debug("access to postProcessAfterInitialization bean {}, beanName {}", bean, beanName);
 
         Class<?> targetClass = AopUtils.getTargetClass(bean);
-        Collection<KafkaListener> kafkaListeners = findListenerAnnotations(targetClass);
-        //类上是否有注解 目前强制不再类上加注解
-        final boolean hasClassListeners = kafkaListeners.size() > 0;
+        Optional<KafkaListener> classLevelListener = findListenerAnnotations(targetClass);
+        //类上是否有注解
+        final boolean hasClassListeners = classLevelListener.isPresent();
         //方法列表
         final List<Method> multiMethods = new ArrayList<>();
         Map<Method, Set<KafkaListener>> annotatedMethods = MethodIntrospector.selectMethods(targetClass,
@@ -77,13 +78,14 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
                     return (!listenerMethods.isEmpty() ? listenerMethods : null);
                 });
 
-
-        if (hasClassListeners) {
-            Set<Method> methodsWithHandler = MethodIntrospector.selectMethods(targetClass,
-                    (ReflectionUtils.MethodFilter) method ->
-                            AnnotationUtils.findAnnotation(method, KafkaHandler.class) != null);
-            multiMethods.addAll(methodsWithHandler);
+        /**
+         * 如果类上存在注解，该类下面必须有方法也有该注解注释
+         */
+        if (hasClassListeners && annotatedMethods.isEmpty()) {
+            throw new IllegalArgumentException("@KafkaListener found on class type , " +
+                    "but no @KafkaListener found on the method ,pleanse set it on the method");
         }
+
         if (annotatedMethods.isEmpty()) {
             this.logger.info("No @KafkaListener annotations found on bean type: " + bean.getClass());
         } else {
@@ -91,7 +93,13 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
             for (Map.Entry<Method, Set<KafkaListener>> entry : annotatedMethods.entrySet()) {
                 Method method = entry.getKey();
                 for (KafkaListener listener : entry.getValue()) {
-                    processKafkaListener(listener, method, bean, beanName);
+                    ListenerCondition listenerMethodInfo = createListenerInfo(listener);
+                    if (hasClassListeners) {
+                        ListenerCondition listenerClassinfo = createListenerInfo(classLevelListener.get());
+                        processKafkaListener(listenerClassinfo, listenerMethodInfo, method, bean, beanName);
+                    } else {
+                        processKafkaListener(null, listenerMethodInfo, method, bean, beanName);
+                    }
                 }
             }
 
@@ -103,18 +111,21 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         return bean;
     }
 
+
     /**
-     * 扫描bean类上是否有注解 @KafkaListener
+     * 扫描bean 类上 是否有注解 @KafkaListener
      */
-    private Collection<KafkaListener> findListenerAnnotations(Class<?> clazz) {
-        Set<KafkaListener> listeners = new HashSet<>();
+    private Optional<KafkaListener> findListenerAnnotations(Class<?> clazz) {
         KafkaListener ann = AnnotationUtils.findAnnotation(clazz, KafkaListener.class);
-        if (ann != null) {
-            listeners.add(ann);
-        }
-        return listeners;
+        return Optional.ofNullable(ann);
     }
 
+    /**
+     * 扫描bean 方法上 是否有注解 @KafkaListener
+     *
+     * @param method
+     * @return
+     */
     private Set<KafkaListener> findListenerAnnotations(Method method) {
         Set<KafkaListener> listeners = new HashSet<KafkaListener>();
         KafkaListener ann = AnnotationUtils.findAnnotation(method, KafkaListener.class);
@@ -125,17 +136,34 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         return listeners;
     }
 
-
-    protected void processKafkaListener(KafkaListener kafkaListener, Method method, Object bean, String beanName) {
+    /**
+     * 处理注解信息
+     *
+     * @param classinfo
+     * @param methodInfo
+     * @param method
+     * @param bean
+     * @param beanName
+     */
+    protected void processKafkaListener(ListenerCondition classinfo, ListenerCondition methodInfo, Method method, Object bean, String beanName) {
         Method methodToUse = checkProxy(method, bean);
         ConsumerEndpoint endpoint = new ConsumerEndpoint();
         endpoint.setMethod(methodToUse);
         endpoint.setBean(bean);
-        endpoint.setGroupId(kafkaListener.groupId());
-        endpoint.setTopic(kafkaListener.topic());
         endpoint.setParameterTypes(Arrays.asList(method.getParameterTypes()));
-        endpoint.setSerializer(kafkaListener.serializer());
-        endpoint.setKafkaHostKey(kafkaListener.kafkaHostKey());
+
+        ListenerCondition combineInfo = null;
+        if (classinfo != null) {
+            combineInfo = combine(classinfo, methodInfo);
+        } else {
+            combineInfo = methodInfo;
+        }
+
+        endpoint.setGroupId(combineInfo.getGroupId());
+        endpoint.setTopic(combineInfo.getTopic());
+        endpoint.setSerializer(combineInfo.getSerializer());
+        endpoint.setKafkaHostKey(combineInfo.getKafkaHostKey());
+
         this.registrar.registerEndpoint(endpoint);
     }
 
@@ -173,4 +201,55 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
     public int getOrder() {
         return LOWEST_PRECEDENCE;
     }
+
+    /**
+     * 注解元信息 封装为 bean
+     *
+     * @param listener
+     */
+    private ListenerCondition createListenerInfo(KafkaListener listener) {
+        ListenerCondition condition = new ListenerCondition.Builder()
+                .topic(listener.topic())
+                .groupId(listener.groupId())
+                .serializer(listener.serializer())
+                .kafkaHostKey(listener.kafkaHostKey())
+                .build();
+        return condition;
+    }
+
+
+    private ListenerCondition combine(ListenerCondition classInfo, ListenerCondition methodInfo) {
+        ListenerCondition combine = new ListenerCondition();
+        // topic
+        if (methodInfo.getTopic() != null) {
+            combine.setTopic(methodInfo.getTopic());
+        } else if (classInfo.getTopic() != null && methodInfo.getTopic() == null) {
+            combine.setTopic(classInfo.getTopic());
+        }
+        //groupId
+        if (methodInfo.getGroupId() != null) {
+            combine.setGroupId(methodInfo.getGroupId());
+        } else if (classInfo.getGroupId() != null && methodInfo.getGroupId() == null) {
+            combine.setGroupId(classInfo.getGroupId());
+        }
+        //kafkaHostKey
+        if (methodInfo.getKafkaHostKey() == Contans.DEFAULT_CONSUMER_HOST_KEY
+                && classInfo.getKafkaHostKey() != Contans.DEFAULT_CONSUMER_HOST_KEY) {
+            combine.setKafkaHostKey(classInfo.getKafkaHostKey());
+        } else {
+            combine.setKafkaHostKey(methodInfo.getKafkaHostKey());
+        }
+        //serializer
+        if (classInfo.getSerializer() != null) {
+            if (methodInfo.getSerializer() != null) {
+                String type = classInfo.getSerializer() + "." + methodInfo.getSerializer();
+                combine.setSerializer(type);
+            }
+            combine.setSerializer(classInfo.getSerializer());
+        } else {
+            combine.setSerializer(methodInfo.getSerializer());
+        }
+        return combine;
+    }
+
 }

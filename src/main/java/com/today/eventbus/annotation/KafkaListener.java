@@ -1,5 +1,7 @@
 package com.today.eventbus.annotation;
 
+import com.today.eventbus.utils.Contans;
+
 import java.lang.annotation.*;
 
 /**
@@ -8,7 +10,7 @@ import java.lang.annotation.*;
  * @author hz.lei
  * @date 2018年03月02日 上午12:48
  */
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD,ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
@@ -27,7 +29,7 @@ public @interface KafkaListener {
      *
      * @return
      */
-    String kafkaHostKey() default "dapeng.kafka.consumer.host";
+    String kafkaHostKey() default Contans.DEFAULT_CONSUMER_HOST_KEY;
 
 
 }
