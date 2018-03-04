@@ -52,13 +52,14 @@ trait AbstractEventBus {
     val eventType = event.getClass.getName
     // fetch id
     val id = fetchMsgId(event)
-    val executeSql = sql"INSERT INTO  common_event set id=${id} event_type=${eventType}, event_binary=${bytes}"
+    val executeSql = sql"INSERT INTO  common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
     dataSource.executeUpdate(executeSql)
 
     logger.info("save message successful ")
   }
 
   /**
+    * Todo 临时解决方案
     * 反射拿到消息第一个id参数，作为存储数据库的 唯一 id
     *
     * @param event
@@ -68,7 +69,7 @@ trait AbstractEventBus {
     try {
       val field: Field = event.getClass.getDeclaredField("id")
       field.setAccessible(true)
-      field.get(event).toString.toLong
+      field.get(event).asInstanceOf[Long]
     } catch {
       case e: Exception =>
         logger.error("获取消息id失败，请检查事件是否带有唯一id，以及字段名是否为id")
