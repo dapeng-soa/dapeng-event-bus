@@ -208,12 +208,11 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
      * @param listener
      */
     private ListenerCondition createListenerInfo(KafkaListener listener) {
-        ListenerCondition condition = new ListenerCondition.Builder()
-                .topic(listener.topic())
-                .groupId(listener.groupId())
-                .serializer(listener.serializer())
-                .kafkaHostKey(listener.kafkaHostKey())
-                .build();
+        ListenerCondition condition = new ListenerCondition();
+        condition.setTopic(listener.topic());
+        condition.setGroupId(listener.groupId());
+        condition.setSerializer(listener.serializer());
+        condition.setKafkaHostKey(listener.kafkaHostKey());
         return condition;
     }
 
