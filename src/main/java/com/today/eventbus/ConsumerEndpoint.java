@@ -31,6 +31,9 @@ public class ConsumerEndpoint {
 
     private String serializer;
 
+    private String kafkaHostKey;
+
+
     public String getGroupId() {
         return groupId;
     }
@@ -105,5 +108,17 @@ public class ConsumerEndpoint {
 
     public void setSerializer(String serializer) {
         this.serializer = serializer;
+    }
+
+    public String getKafkaHost() {
+        String kafkaHost = System.getenv(kafkaHostKey);
+        if (kafkaHost == null) {
+            kafkaHost = System.getProperty(kafkaHostKey);
+        }
+        return kafkaHost;
+    }
+
+    public void setKafkaHostKey(String kafkaHostKey) {
+        this.kafkaHostKey = kafkaHostKey;
     }
 }
