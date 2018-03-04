@@ -51,7 +51,7 @@ trait AbstractEventBus {
     val bytes: Array[Byte] = processor.buildMessageByte(event)
     val eventType = event.getClass.getName
     // fetch id
-    val id = fetchMsgId(event)
+    val id = getMsgId(event)
     val executeSql = sql"INSERT INTO  common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
     dataSource.executeUpdate(executeSql)
 
@@ -65,7 +65,7 @@ trait AbstractEventBus {
     * @param event
     * @return
     */
-  private def fetchMsgId(event: Any): Long = {
+  private def getMsgId(event: Any): Long = {
     try {
       val field: Field = event.getClass.getDeclaredField("id")
       field.setAccessible(true)

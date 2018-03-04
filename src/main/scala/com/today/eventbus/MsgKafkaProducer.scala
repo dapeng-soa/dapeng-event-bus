@@ -19,9 +19,7 @@ case class MsgKafkaProducer(serverHost: String, transactionId: String) {
   /**
     * 127.0.0.1:9091,127.0.0.1:9092
     */
-  val kafkaConnect = serverHost
-  val transId = transactionId
-  initTransProducer(transId)
+  initTransProducer(transactionId)
 
   var producer: KafkaProducer[Long, Array[Byte]] = _
 
@@ -35,7 +33,7 @@ case class MsgKafkaProducer(serverHost: String, transactionId: String) {
     val properties = builder
       .withKeySerializer(classOf[LongSerializer])
       .withValueSerializer(classOf[ByteArraySerializer])
-      .bootstrapServers(kafkaConnect)
+      .bootstrapServers(serverHost)
       .withTransactions(transId)
       .build
 
