@@ -13,7 +13,6 @@ import wangzx.scala_commons.sql._
   * 描述: 事件定时任务，轮询数据库，发送消息 to kafka
   *
   * @param kafkaHost kafka cluster:127.0.0.1:9091,127.0.0.1:9092
-  *
   * @author hz.lei
   * @date 2018年02月28日 下午3:00
   */
@@ -31,7 +30,8 @@ class MsgPublishTask(topic: String,
     * fetch message from database , then send to kafka broker
     */
   def doPublishMessages(): Unit = {
-    logger.info("begin to publish messages to kafka")
+    if (logger.isDebugEnabled())
+      logger.debug("begin to publish messages to kafka")
 
     // 消息总条数计数器
     val counter = new AtomicInteger(0)
@@ -46,14 +46,15 @@ class MsgPublishTask(topic: String,
         conn.eachRow[EventStore](sql"SELECT * FROM common_event limit ${window} FOR UPDATE")(event => {
           conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
           producer.send(topic, event.id, event.eventBinary)
-          
+
           resultSetCounter.incrementAndGet()
           counter.incrementAndGet()
         })
       })
     }
 
-    logger.info(s"end publish messages(${counter.get()}) to kafka")
+    if (logger.isDebugEnabled())
+      logger.debug(s"end publish messages(${counter.get()}) to kafka")
   }
 
 }
