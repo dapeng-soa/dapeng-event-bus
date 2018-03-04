@@ -239,12 +239,14 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
             combine.setKafkaHostKey(methodInfo.getKafkaHostKey());
         }
         //serializer
+        // fixme 如果类上面包名固定，但是下面方法有另外的包名
         if (!classInfo.getSerializer().isEmpty()) {
             if (!methodInfo.getSerializer().isEmpty()) {
                 String type = classInfo.getSerializer() + "." + methodInfo.getSerializer();
                 combine.setSerializer(type);
+            } else {
+                combine.setSerializer(classInfo.getSerializer());
             }
-            combine.setSerializer(classInfo.getSerializer());
         } else {
             combine.setSerializer(methodInfo.getSerializer());
         }
