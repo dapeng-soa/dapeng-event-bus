@@ -220,27 +220,27 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
     private ListenerCondition combine(ListenerCondition classInfo, ListenerCondition methodInfo) {
         ListenerCondition combine = new ListenerCondition();
         // topic
-        if (methodInfo.getTopic() != null) {
+        if (!methodInfo.getTopic().isEmpty()) {
             combine.setTopic(methodInfo.getTopic());
-        } else if (classInfo.getTopic() != null && methodInfo.getTopic() == null) {
+        } else if (!classInfo.getTopic().isEmpty() && methodInfo.getTopic().isEmpty()) {
             combine.setTopic(classInfo.getTopic());
         }
         //groupId
-        if (methodInfo.getGroupId() != null) {
+        if (!methodInfo.getGroupId().isEmpty()) {
             combine.setGroupId(methodInfo.getGroupId());
-        } else if (classInfo.getGroupId() != null && methodInfo.getGroupId() == null) {
+        } else if (!classInfo.getGroupId().isEmpty() && methodInfo.getGroupId().isEmpty()) {
             combine.setGroupId(classInfo.getGroupId());
         }
         //kafkaHostKey
-        if (methodInfo.getKafkaHostKey() == Contans.DEFAULT_CONSUMER_HOST_KEY
-                && classInfo.getKafkaHostKey() != Contans.DEFAULT_CONSUMER_HOST_KEY) {
+        if (methodInfo.getKafkaHostKey().equals(Contans.DEFAULT_CONSUMER_HOST_KEY)
+                && !classInfo.getKafkaHostKey().equals(Contans.DEFAULT_CONSUMER_HOST_KEY)) {
             combine.setKafkaHostKey(classInfo.getKafkaHostKey());
         } else {
             combine.setKafkaHostKey(methodInfo.getKafkaHostKey());
         }
         //serializer
-        if (classInfo.getSerializer() != null) {
-            if (methodInfo.getSerializer() != null) {
+        if (!classInfo.getSerializer().isEmpty()) {
+            if (!methodInfo.getSerializer().isEmpty()) {
                 String type = classInfo.getSerializer() + "." + methodInfo.getSerializer();
                 combine.setSerializer(type);
             }
