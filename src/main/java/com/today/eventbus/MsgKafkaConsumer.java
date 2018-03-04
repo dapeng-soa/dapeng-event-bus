@@ -40,7 +40,7 @@ public class MsgKafkaConsumer extends Thread {
         this.init();
     }
 
-    public void init() {
+    private void init() {
         logger.info(new StringBuffer("[KafkaConsumer] [init] ")
                 .append("kafkaConnect(").append(kafkaConnect)
                 .append(") groupId(").append(groupId)
