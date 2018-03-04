@@ -18,30 +18,24 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 
-public class MsgHandleUtil {
+public class MsgDecoder {
 
-    private static Logger logger = LoggerFactory.getLogger(MsgHandleUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(MsgDecoder.class);
 
 
-    private static Map<String, BeanSerializer> beanSerializers = new ConcurrentHashMap<>(16);
+    private static Map<String, BeanSerializer> beanSerializers = new ConcurrentHashMap<>(64);
 
     /**
-     * 第三方应用注册序列化器, .i.e 哪些事件你需要关心？ 在这里根据事件的全限定名，进行注册
+     * 注册事件解码器
      *
-     * @param eventType
-     * @param serializer
+     * @param eventType 事件类型, 也就是具体业务事件的类名(包括包名)
+     * @param serializer 事件解码器
      */
     public static void register(String eventType, BeanSerializer serializer) {
-        if (beanSerializers.containsKey(eventType)) {
-            if (beanSerializers.get(eventType) == null) {
-                beanSerializers.put(eventType, serializer);
-            }
-            throw new IllegalArgumentException("该event类型已注册对应的serializer 编解码器");
-        }
-
         if (serializer == null) {
             throw new IllegalArgumentException("serializer 序列化器不能为空");
         }
+
         beanSerializers.put(eventType, serializer);
         logger.info("register beanSerializer successful, eventType[ {} ]", eventType);
     }
