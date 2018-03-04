@@ -135,6 +135,7 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         endpoint.setTopic(kafkaListener.topic());
         endpoint.setParameterTypes(Arrays.asList(method.getParameterTypes()));
         endpoint.setSerializer(kafkaListener.serializer());
+        endpoint.setKafkaHostKey(kafkaListener.kafkaHostKey());
         this.registrar.registerEndpoint(endpoint);
     }
 

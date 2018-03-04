@@ -33,14 +33,20 @@ public class MsgKafkaConsumer extends Thread {
     private String kafkaConnect;
     protected KafkaConsumer<Long, byte[]> consumer;
 
-    public MsgKafkaConsumer(String groupId, String topic) {
-        this.kafkaConnect = SoaSystemEnvProperties.SOA_KAFKA_PORT;
+    /**
+     * host1:port1,host2:port2,...
+     *
+     * @param groupId
+     * @param topic
+     */
+    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic) {
+        this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
         this.init();
     }
 
-    private void init() {
+    public void init() {
         logger.info(new StringBuffer("[KafkaConsumer] [init] ")
                 .append("kafkaConnect(").append(kafkaConnect)
                 .append(") groupId(").append(groupId)

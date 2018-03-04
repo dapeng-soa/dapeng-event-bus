@@ -21,5 +21,7 @@ public @interface KafkaListener {
 
     String serializer();
 
+    String kafkaHostKey() default "dapeng.kafka.consumer.host";
+
 
 }
