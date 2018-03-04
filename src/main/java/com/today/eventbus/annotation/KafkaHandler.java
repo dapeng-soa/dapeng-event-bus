@@ -1,4 +1,4 @@
-package com.today.eventbus;
+package com.today.eventbus.annotation;
 
 import java.lang.annotation.*;
 
