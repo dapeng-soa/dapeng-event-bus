@@ -125,13 +125,10 @@ public class MsgKafkaConsumer extends Thread {
             try {
                 consumer.getMethod().invoke(consumer.getBean(), eventIface);
                 logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                 logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件", e);
             }
+
         } else {
             logger.info("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
         }
