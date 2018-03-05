@@ -30,12 +30,9 @@ class MsgPublishTask(topic: String,
     * fetch message from database , then send to kafka broker
     */
   def doPublishMessages(): Unit = {
-<<<<<<< HEAD
-    logger.debug("begin to publish messages to kafka")
-=======
-    if (logger.isDebugEnabled())
+    if (logger.isDebugEnabled()) {
       logger.debug("begin to publish messages to kafka")
->>>>>>> annotation
+    }
 
     // 消息总条数计数器
     val counter = new AtomicInteger(0)
@@ -57,12 +54,10 @@ class MsgPublishTask(topic: String,
       })
     }
 
-<<<<<<< HEAD
-    logger.debug(s"end publish messages(${counter.get()}) to kafka")
-=======
-    if (logger.isDebugEnabled())
+    if (logger.isDebugEnabled()) {
       logger.debug(s"end publish messages(${counter.get()}) to kafka")
->>>>>>> annotation
+    }
+
   }
 
 }
