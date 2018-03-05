@@ -96,14 +96,8 @@ public class ConsumerEndpoint {
      * @return
      * @throws ClassNotFoundException
      */
-    public BeanSerializer getSerializerType() throws Exception {
-        BeanSerializer beanSerializer;
-        try {
-            beanSerializer = (BeanSerializer) this.getClass().getClassLoader().loadClass(serializer).newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            throw new Exception(e.getMessage(), e);
-        }
-        return beanSerializer;
+    public BeanSerializer getEventSerializer() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        return (BeanSerializer) this.getClass().getClassLoader().loadClass(serializer).newInstance();
     }
 
     public void setSerializer(String serializer) {
