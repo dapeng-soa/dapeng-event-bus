@@ -2,7 +2,7 @@ package com.today.eventbus.spring;
 
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.annotation.KafkaListener;
-import com.today.eventbus.utils.Contans;
+import com.today.eventbus.utils.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
@@ -238,8 +238,8 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
             combine.setGroupId(classInfo.getGroupId());
         }
         //kafkaHostKey
-        if (methodInfo.getKafkaHostKey().equals(Contans.DEFAULT_CONSUMER_HOST_KEY)
-                && !classInfo.getKafkaHostKey().equals(Contans.DEFAULT_CONSUMER_HOST_KEY)) {
+        if (methodInfo.getKafkaHostKey().equals(Constant.DEFAULT_CONSUMER_HOST_KEY)
+                && !classInfo.getKafkaHostKey().equals(Constant.DEFAULT_CONSUMER_HOST_KEY)) {
             combine.setKafkaHostKey(classInfo.getKafkaHostKey());
         } else {
             combine.setKafkaHostKey(methodInfo.getKafkaHostKey());
