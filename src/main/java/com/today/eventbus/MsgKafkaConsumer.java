@@ -136,7 +136,7 @@ public class MsgKafkaConsumer extends Thread {
             }
 
         } else {
-            logger.info("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
+            logger.debug("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
         }
     }
 }
