@@ -48,7 +48,7 @@ trait AbstractEventBus {
   private def persistenceEvent(event: Any): Unit = {
     logger.info("prepare to save event message")
     val processor = new KafkaMessageProcessor[Any]
-    val bytes: Array[Byte] = processor.buildMessageByte(event)
+    val bytes: Array[Byte] = processor.encodeMessage(event)
     val eventType = event.getClass.getName
     // fetch id
     val id = getMsgId(event)
