@@ -128,9 +128,6 @@ public class MsgKafkaConsumer extends Thread {
             } catch (InstantiationException e) {
                 logger.error(e.getMessage(), e);
                 logger.error("实例化事件" + eventType + "对应的编解码器失败");
-            } catch (ClassNotFoundException e) {
-                logger.error(e.getMessage(), e);
-                logger.error("找不到事件" + eventType + "对应的编解码器");
             }
         } else {
             logger.debug("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
