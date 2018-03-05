@@ -29,7 +29,7 @@ public class ConsumerEndpoint {
 
     private List<Class<?>> parameterTypes;
 
-    private String serializer;
+    private Class<?> serializer;
 
     private String kafkaHostKey;
 
@@ -90,19 +90,20 @@ public class ConsumerEndpoint {
         this.parameterTypes = parameterTypes;
     }
 
+    public void setSerializer(Class<?> serializer) {
+        this.serializer = serializer;
+    }
+
     /**
-     * 根据 serializer 全限定名 反射获取 其对象
+     * 根据 serializer Class<?> 类型 创建实例 返回
      *
      * @return
      * @throws ClassNotFoundException
      */
-    public BeanSerializer getEventSerializer() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        return (BeanSerializer) this.getClass().getClassLoader().loadClass(serializer).newInstance();
+    public BeanSerializer getEventSerializer() throws IllegalAccessException, InstantiationException {
+        return (BeanSerializer) serializer.newInstance();
     }
 
-    public void setSerializer(String serializer) {
-        this.serializer = serializer;
-    }
 
     public String getKafkaHost() {
         String kafkaHost = System.getenv(kafkaHostKey);
