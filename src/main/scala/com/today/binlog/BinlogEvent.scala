@@ -1,6 +1,5 @@
 package com.today.binlog
 
-import java.nio.ByteBuffer
 
 import com.alibaba.otter.canal.protocol.CanalEntry
 import com.alibaba.otter.canal.protocol.CanalEntry.{EventType, RowData}
