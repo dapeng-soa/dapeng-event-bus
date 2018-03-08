@@ -33,6 +33,7 @@ public class ConsumerEndpoint {
 
     private String kafkaHostKey;
 
+    private Boolean isBinlog = false;
 
     public String getGroupId() {
         return groupId;
@@ -92,6 +93,14 @@ public class ConsumerEndpoint {
 
     public void setSerializer(Class<?> serializer) {
         this.serializer = serializer;
+    }
+
+    public Boolean getBinlog() {
+        return isBinlog;
+    }
+
+    public void setBinlog(Boolean binlog) {
+        isBinlog = binlog;
     }
 
     /**
