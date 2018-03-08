@@ -1,5 +1,6 @@
 package com.today.eventbus.spring;
 
+import com.today.binlog.BinlogKafkaConsumer;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.MsgKafkaConsumer;
 import org.slf4j.Logger;
@@ -7,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 描述:
@@ -23,7 +21,9 @@ public class KafkaListenerRegistrar implements InitializingBean {
     private static final Logger logger = LoggerFactory.getLogger(KafkaListenerRegistrar.class);
     private final List<ConsumerEndpoint> endpointDescriptors = new ArrayList<>();
 
-    public static final Map<String, MsgKafkaConsumer> TOPIC_CONSUMERS = new HashMap<>();
+    public static final Map<String, MsgKafkaConsumer> EVENT_CONSUMERS = new HashMap<>();
+
+    public static final Map<String, BinlogKafkaConsumer> BINLOG_CONSUMERS = new HashMap<>();
 
     public void registerEndpoint(ConsumerEndpoint endpoint) {
         Assert.notNull(endpoint, "Endpoint must be set");
@@ -41,15 +41,30 @@ public class KafkaListenerRegistrar implements InitializingBean {
             // 默认 group id
             String className = endpoint.getBean().getClass().getName();
             groupId = "".equals(groupId) ? className : groupId;
-            String consumerKey = groupId + ":" + topic;
+            String consumerKey = groupId + ":" +   topic;
+            //判断类型 binlog   or   event-bus ？
+            if (endpoint.getBinlog()) {
+                // binlog
+               /* Optional<BinlogKafkaConsumer> consumers = Optional.ofNullable(BINLOG_CONSUMERS.get(consumerKey));
+                consumers.map*/
 
-            if (TOPIC_CONSUMERS.containsKey(consumerKey)) {
-                TOPIC_CONSUMERS.get(consumerKey).addCustomer(endpoint);
+                if (BINLOG_CONSUMERS.containsKey(consumerKey)) {
+                    BINLOG_CONSUMERS.get(consumerKey).addConsumer(endpoint);
+                } else {
+                    BinlogKafkaConsumer consumer = new BinlogKafkaConsumer(kafkaHost, groupId, topic);
+                    consumer.addConsumer(endpoint);
+                    BINLOG_CONSUMERS.put(consumerKey, consumer);
+                }
+
             } else {
-                // KafkaConsumer consumer = new KafkaConsumer(groupId, topic);
-                MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost,groupId, topic);
-                consumer.addCustomer(endpoint);
-                TOPIC_CONSUMERS.put(consumerKey, consumer);
+                // event
+                if (EVENT_CONSUMERS.containsKey(consumerKey)) {
+                    EVENT_CONSUMERS.get(consumerKey).addConsumer(endpoint);
+                } else {
+                    MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost, groupId, topic);
+                    consumer.addConsumer(endpoint);
+                    EVENT_CONSUMERS.put(consumerKey, consumer);
+                }
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -58,9 +73,10 @@ public class KafkaListenerRegistrar implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        logger.info("ready to start consumer ,consumer size {}", TOPIC_CONSUMERS.size());
-        for (Map.Entry<String, MsgKafkaConsumer> entry : TOPIC_CONSUMERS.entrySet()) {
-            entry.getValue().start();
-        }
+        logger.info("ready to start consumer ,event consumer size {}, binlog consumer size {}", EVENT_CONSUMERS.size(), BINLOG_CONSUMERS.size());
+
+        EVENT_CONSUMERS.values().forEach(Thread::start);
+
+        BINLOG_CONSUMERS.values().forEach(Thread::start);
     }
 }

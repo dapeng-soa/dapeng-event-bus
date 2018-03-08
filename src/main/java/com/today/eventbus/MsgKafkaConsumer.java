@@ -63,10 +63,15 @@ public class MsgKafkaConsumer extends Thread {
         consumer = new KafkaConsumer<>(props);
     }
 
-    public void addCustomer(ConsumerEndpoint client) {
-        this.bizConsumers.add(client);
-    }
+    /**
+     * 添加相同的 group + topic  消费者
+     *
+     * @param endpoint
+     */
+    public void addConsumer(ConsumerEndpoint endpoint) {
+        this.bizConsumers.add(endpoint);
 
+    }
 
     @Override
     public void run() {
@@ -133,4 +138,6 @@ public class MsgKafkaConsumer extends Thread {
             logger.debug("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
         }
     }
+
+
 }

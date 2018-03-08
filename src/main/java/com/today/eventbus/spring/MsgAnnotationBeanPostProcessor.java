@@ -1,6 +1,7 @@
 package com.today.eventbus.spring;
 
 import com.today.eventbus.ConsumerEndpoint;
+import com.today.eventbus.annotation.BinlogListener;
 import com.today.eventbus.annotation.KafkaConsumer;
 import com.today.eventbus.annotation.KafkaListener;
 import org.slf4j.Logger;
@@ -72,20 +73,30 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         final boolean hasKafkaConsumer = kafkaConsumer.isPresent();
 
         if (hasKafkaConsumer) {
-            //方法列表
-            final List<Method> multiMethods = new ArrayList<>();
-
+            //方法列表 ，查找方法上标有 @KafkaListener 的注解
             Map<Method, Set<KafkaListener>> annotatedMethods = MethodIntrospector.selectMethods(targetClass,
                     (MethodIntrospector.MetadataLookup<Set<KafkaListener>>) method -> {
                         Set<KafkaListener> listenerMethods = findListenerAnnotations(method);
                         return (!listenerMethods.isEmpty() ? listenerMethods : null);
                     });
 
+            //查找方法上标有 @BinlogListener 的注解
+            Map<Method, Set<BinlogListener>> binlogMethods = MethodIntrospector.selectMethods(targetClass,
+                    (MethodIntrospector.MetadataLookup<Set<BinlogListener>>) method -> {
+                        Set<BinlogListener> listenerMethods = findBinlogListenerAnnotations(method);
+                        return (!listenerMethods.isEmpty() ? listenerMethods : null);
+                    });
 
-            if (annotatedMethods.isEmpty()) {
+            if (annotatedMethods.isEmpty() && binlogMethods.isEmpty()) {
                 throw new IllegalArgumentException("@KafkaConsumer found on class type , " +
-                        "but no @KafkaListener found on the method ,please set it on the method");
-            } else {
+                        "but no @KafkaListener or @BinlogListener found on the method ,please set it on the method");
+            }
+
+            if (!annotatedMethods.isEmpty() && !binlogMethods.isEmpty()) {
+                throw new IllegalArgumentException("@KafkaListener or @BinlogListener only one could on the same  bean class");
+            }
+
+            if (!annotatedMethods.isEmpty()) {
                 // Non-empty set of methods
                 for (Map.Entry<Method, Set<KafkaListener>> entry : annotatedMethods.entrySet()) {
                     Method method = entry.getKey();
@@ -94,7 +105,19 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
                         processKafkaListener(kafkaConsumer.get(), listener, method, bean, beanName);
                     }
                 }
+                logger.info("there are {} methods have @KafkaListener on This bean ", binlogMethods.size());
             }
+
+            if (!binlogMethods.isEmpty()) {
+                // Non-empty set of methods
+                for (Map.Entry<Method, Set<BinlogListener>> entry : binlogMethods.entrySet()) {
+                    Method method = entry.getKey();
+                    // process annotation information
+                    processBinlogListener(kafkaConsumer.get(), method, bean);
+                }
+                logger.info("there are {} methods have @BinlogListener on This bean ", binlogMethods.size());
+            }
+
 
             if (this.logger.isDebugEnabled()) {
                 this.logger.debug(annotatedMethods.size() + " @KafkaListener methods processed on bean '"
@@ -122,8 +145,25 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
      * @return
      */
     private Set<KafkaListener> findListenerAnnotations(Method method) {
-        Set<KafkaListener> listeners = new HashSet<KafkaListener>();
+        Set<KafkaListener> listeners = new HashSet<>();
         KafkaListener ann = AnnotationUtils.findAnnotation(method, KafkaListener.class);
+        if (ann != null) {
+            listeners.add(ann);
+        }
+
+        return listeners;
+    }
+
+
+    /**
+     * 扫描bean 方法上 是否有注解 @BinlogListener
+     *
+     * @param method
+     * @return
+     */
+    private Set<BinlogListener> findBinlogListenerAnnotations(Method method) {
+        Set<BinlogListener> listeners = new HashSet<>();
+        BinlogListener ann = AnnotationUtils.findAnnotation(method, BinlogListener.class);
         if (ann != null) {
             listeners.add(ann);
         }
@@ -155,6 +195,25 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
         endpoint.setSerializer(listener.serializer());
 
         this.registrar.registerEndpoint(endpoint);
+    }
+
+
+    private void processBinlogListener(KafkaConsumer consumer, Method method, Object bean) {
+        Method methodToUse = checkProxy(method, bean);
+
+        ConsumerEndpoint endpoint = new ConsumerEndpoint();
+        endpoint.setMethod(methodToUse);
+        endpoint.setBean(bean);
+        // class annotation information
+        endpoint.setGroupId(consumer.groupId());
+        endpoint.setTopic(consumer.topic());
+        endpoint.setKafkaHostKey(consumer.kafkaHostKey());
+        // method annotation information
+        endpoint.setBinlog(true);
+
+        this.registrar.registerEndpoint(endpoint);
+
+
     }
 
     /**
