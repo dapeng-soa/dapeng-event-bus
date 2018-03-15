@@ -1,11 +1,9 @@
 package com.today.eventbus.scheduler
 
-import java.sql.Connection
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
-import com.github.dapeng.core.helper.MasterHelper
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory
 import wangzx.scala_commons.sql._
@@ -46,21 +44,18 @@ class MsgPublishTask(topic: String,
     while (resultSetCounter.get() == window) {
       resultSetCounter.set(0)
       dataSource.withTransaction[Unit](conn => {
-        try {
-          println(s"事务默认隔离级别:${conn.getTransactionIsolation}")
-          conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED)
-          conn.eachRow[EventStore](sql"SELECT * FROM common_event limit ${window} FOR UPDATE")(event => {
-            conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
+        //val lockId = insert into xxx
+        conn.eachRow[EventStore](sql"SELECT * FROM common_event WHERE lock_id < ${lockId} limit ${window} FOR UPDATE")(event => {
+          conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
+          if (event.eventType == "TMP_LOCK") {
             producer.send(topic, event.id, event.eventBinary)
 
-            resultSetCounter.incrementAndGet()
             counter.incrementAndGet()
-          })
+          }
 
-        } finally {
-          //          conn.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ)
-        }
+          resultSetCounter.incrementAndGet()
 
+        })
       })
     }
 
