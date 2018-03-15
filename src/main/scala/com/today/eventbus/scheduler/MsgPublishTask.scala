@@ -26,6 +26,9 @@ class MsgPublishTask(topic: String,
   private val producer = new MsgKafkaProducer(kafkaHost, tid)
   logger.warn("Kafka producer transactionId:" + tid)
 
+
+  val lockEventType = "TMP_LOCK";
+
   /**
     * fetch message from database , then send to kafka broker
     */
@@ -41,18 +44,29 @@ class MsgPublishTask(topic: String,
     // 单轮处理的消息计数器, 用于控制循环退出.
     val resultSetCounter = new AtomicInteger(window)
 
+
+
+    /*println(s"ThreadName:   ${Thread.currentThread().getName}")
+    println(s"conn ${conn}")
+    println(s"事务默认隔离级别:${conn.getTransactionIsolation}")
+    conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED)*/
+
+
+
     while (resultSetCounter.get() == window) {
       resultSetCounter.set(0)
       dataSource.withTransaction[Unit](conn => {
+
+        val lockId: Int = conn.generateKey[Int](sql"INSERT INTO common_event SET unique_id= 0 ,event_type=${lockEventType}")
+
         //val lockId = insert into xxx
         conn.eachRow[EventStore](sql"SELECT * FROM common_event WHERE lock_id < ${lockId} limit ${window} FOR UPDATE")(event => {
           conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
-          if (event.eventType == "TMP_LOCK") {
+          if (event.eventType != lockEventType) {
             producer.send(topic, event.id, event.eventBinary)
 
             counter.incrementAndGet()
           }
-
           resultSetCounter.incrementAndGet()
 
         })
