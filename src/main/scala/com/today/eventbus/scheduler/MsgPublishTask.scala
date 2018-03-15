@@ -45,14 +45,11 @@ class MsgPublishTask(topic: String,
     val resultSetCounter = new AtomicInteger(window)
 
 
-
-    /*println(s"ThreadName:   ${Thread.currentThread().getName}")
-    println(s"conn ${conn}")
-    println(s"事务默认隔离级别:${conn.getTransactionIsolation}")
-    conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED)*/
-
-
-
+    /**
+      * id: 作用是不锁住全表，获取消息时不回影响插入
+      *
+      * uniqueId:
+      */
     while (resultSetCounter.get() == window) {
       resultSetCounter.set(0)
       dataSource.withTransaction[Unit](conn => {
@@ -60,10 +57,10 @@ class MsgPublishTask(topic: String,
         val lockId: Int = conn.generateKey[Int](sql"INSERT INTO common_event SET unique_id= 0 ,event_type=${lockEventType}")
 
         //val lockId = insert into xxx
-        conn.eachRow[EventStore](sql"SELECT * FROM common_event WHERE lock_id < ${lockId} limit ${window} FOR UPDATE")(event => {
+        conn.eachRow[EventStore](sql"SELECT * FROM common_event WHERE id < ${lockId} limit ${window} FOR UPDATE")(event => {
           conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
           if (event.eventType != lockEventType) {
-            producer.send(topic, event.id, event.eventBinary)
+            producer.send(topic, event.uniqueId, event.eventBinary)
 
             counter.incrementAndGet()
           }
