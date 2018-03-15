@@ -46,15 +46,21 @@ class MsgPublishTask(topic: String,
     while (resultSetCounter.get() == window) {
       resultSetCounter.set(0)
       dataSource.withTransaction[Unit](conn => {
-        println(s"事务默认隔离级别:${conn.getTransactionIsolation}")
-        conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED)
-        conn.eachRow[EventStore](sql"SELECT * FROM common_event limit ${window} FOR UPDATE")(event => {
-          conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
-          producer.send(topic, event.id, event.eventBinary)
+        try {
+          println(s"事务默认隔离级别:${conn.getTransactionIsolation}")
+          conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED)
+          conn.eachRow[EventStore](sql"SELECT * FROM common_event limit ${window} FOR UPDATE")(event => {
+            conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
+            producer.send(topic, event.id, event.eventBinary)
 
-          resultSetCounter.incrementAndGet()
-          counter.incrementAndGet()
-        })
+            resultSetCounter.incrementAndGet()
+            counter.incrementAndGet()
+          })
+
+        } finally {
+          //          conn.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ)
+        }
+
       })
     }
 
