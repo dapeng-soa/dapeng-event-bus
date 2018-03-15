@@ -21,8 +21,6 @@ libraryDependencies ++= Seq(
   "com.github.wangzaixiang" %% "scala-sql" % "2.0.3",
   "com.github.dapeng" % "dapeng-core" % "2.0.1-SNAPSHOT",
   "com.github.dapeng" % "dapeng-utils" % "2.0.1-SNAPSHOT",
-//  "com.alibaba.otter" % "canal.common" % "1.0.25",
-//  "com.alibaba.otter" % "canal.protocol" % "1.0.25",
   "com.github.wangzaixiang" %% "spray-json" % "1.3.4",
   "com.alibaba.otter" % "canal.client" % "1.0.25"
 )
