@@ -115,7 +115,8 @@ public class ConsumerEndpoint {
 
 
     public String getKafkaHost() {
-        String kafkaHost = System.getenv(kafkaHostKey);
+        String envKey = kafkaHostKey.replaceAll(".", "_");
+        String kafkaHost = System.getenv(envKey);
         if (kafkaHost == null) {
             kafkaHost = System.getProperty(kafkaHostKey);
         }
