@@ -19,10 +19,17 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-aspects" % "4.3.5.RELEASE",
   "org.apache.kafka" % "kafka-clients" % "1.0.0",
   "com.github.wangzaixiang" %% "scala-sql" % "2.0.3",
-  "com.github.dapeng" % "dapeng-core" % "2.0.1-SNAPSHOT",
-  "com.github.dapeng" % "dapeng-utils" % "2.0.1-SNAPSHOT",
+  "com.github.dapeng" % "dapeng-utils" % "2.0.1-SNAPSHOT" excludeAll (
+    ExclusionRule().withOrganization("io.netty").withName("netty-all")
+    ),
   "com.github.wangzaixiang" %% "spray-json" % "1.3.4",
-  "com.alibaba.otter" % "canal.client" % "1.0.25"
+  "com.alibaba.otter" % "canal.protocol" % "1.0.25" excludeAll(
+    ExclusionRule().withOrganization("com.alibaba.otter").withName("canal.common"),
+    ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
+  )
 )
 
 javacOptions ++= Seq("-encoding", "UTF-8")
+
+//addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
+

@@ -46,7 +46,7 @@ class MsgPublishTask(topic: String,
 
 
     /**
-      * id: 作用是不锁住全表，获取消息时不回影响插入
+      * id: 作用是不锁住全表，获取消息时不会影响插入
       *
       * uniqueId:
       */
