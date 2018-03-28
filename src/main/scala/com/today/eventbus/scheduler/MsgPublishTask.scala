@@ -27,8 +27,6 @@ class MsgPublishTask(topic: String,
   logger.warn("Kafka producer transactionId:" + tid)
 
 
-  val lockEventType = "TMP_LOCK";
-
   /**
     * fetch message from database , then send to kafka broker
     */
@@ -50,7 +48,42 @@ class MsgPublishTask(topic: String,
       *
       * uniqueId:
       */
-    while (resultSetCounter.get() == window) {
+    do {
+        resultSetCounter.set(0)
+
+        dataSource.withTransaction(conn => {
+
+            val lock = conn.row[Row](sql"""SELECT * FROM event_lock WHERE id = 1 FOR UPDATE """)
+
+            // 没有 for update
+            conn.eachRow[EventStore](sql"SELECT * FROM common_event limit ${window}")(event => {
+              val result: Int = conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
+
+              if (result == 1) {
+                producer.send(topic, event.id, event.eventBinary)
+                counter.incrementAndGet()
+              }
+
+              resultSetCounter.incrementAndGet()
+
+            })
+
+            if (logger.isDebugEnabled()) {
+              logger.debug(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
+            }
+
+        })
+
+    } while (resultSetCounter.get() == window)
+
+
+    if (logger.isDebugEnabled()) {
+      logger.debug(s"end publish messages(${counter.get()}) to kafka")
+    }
+
+
+
+    /*while (resultSetCounter.get() == window) {
       resultSetCounter.set(0)
       dataSource.withTransaction[Unit](conn => {
 
@@ -68,11 +101,9 @@ class MsgPublishTask(topic: String,
 
         })
       })
-    }
+    }*/
 
-    if (logger.isDebugEnabled()) {
-      logger.debug(s"end publish messages(${counter.get()}) to kafka")
-    }
+
 
   }
 

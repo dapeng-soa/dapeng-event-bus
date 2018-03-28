@@ -51,8 +51,8 @@ trait AbstractEventBus {
     val bytes: Array[Byte] = processor.encodeMessage(event)
     val eventType = event.getClass.getName
     // fetch id
-    val unique_id = getMsgId(event)
-    val executeSql = sql"INSERT INTO  common_event set unique_id=${unique_id}, event_type=${eventType}, event_binary=${bytes}"
+    val id = getMsgId(event)
+    val executeSql = sql"INSERT INTO  common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
     dataSource.executeUpdate(executeSql)
 
     logger.info("save message successful ")
