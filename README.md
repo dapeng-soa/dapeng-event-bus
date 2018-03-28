@@ -3,14 +3,52 @@
 ## event sql
 
 ```sql
+
+SET NAMES utf8;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+--  Table structure for `common_event`
+-- ----------------------------
+DROP TABLE IF EXISTS `common_event`;
 CREATE TABLE `common_event` (
-  `id` bigint(20) NOT NULL COMMENT '事件id, 全局唯一, 可用于幂等操作',
+  `id` bigint(20) NOT NULL COMMENT '事件id，全局唯一, 可用于幂等操作',
   `event_type` varchar(255) DEFAULT NULL COMMENT '事件类型',
-  `event_binary` blob DEFAULT NULL COMMENT '事件内容',
-  `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6) COMMENT '插入时间',
+  `event_binary` blob COMMENT '事件内容',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 ```
+
+## 作为多节点锁的lock sql
+
+```sql
+/*
+ Date: 03/28/2018 22:12:11 PM
+*/
+
+SET NAMES utf8;
+SET FOREIGN_KEY_CHECKS = 0;
+
+
+DROP TABLE IF EXISTS `event_lock`;
+CREATE TABLE `event_lock` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 插入一条数据
+
+BEGIN;
+INSERT INTO `event_lock` VALUES ('1', 'event_lock');
+COMMIT;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+```
+
 
 ## dependencyTree
 
