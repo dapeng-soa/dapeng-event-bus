@@ -49,30 +49,30 @@ class MsgPublishTask(topic: String,
       * uniqueId:
       */
     do {
-        resultSetCounter.set(0)
+      resultSetCounter.set(0)
 
-        dataSource.withTransaction(conn => {
+      dataSource.withTransaction(conn => {
 
-            val lock = conn.row[Row](sql"""SELECT * FROM event_lock WHERE id = 1 FOR UPDATE """)
+        val lock = conn.row[Row](sql"""SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE """)
 
-            // 没有 for update
-            conn.eachRow[EventStore](sql"SELECT * FROM common_event limit ${window}")(event => {
-              val result: Int = conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
+        // 没有 for update
+        conn.eachRow[EventStore](sql"SELECT * FROM dp_common_event limit ${window}")(event => {
+          val result: Int = conn.executeUpdate(sql"DELETE FROM dp_common_event WHERE id = ${event.id}")
 
-              if (result == 1) {
-                producer.send(topic, event.id, event.eventBinary)
-                counter.incrementAndGet()
-              }
+          if (result == 1) {
+            producer.send(topic, event.id, event.eventBinary)
+            counter.incrementAndGet()
+          }
 
-              resultSetCounter.incrementAndGet()
-
-            })
-
-            if (logger.isDebugEnabled()) {
-              logger.debug(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
-            }
+          resultSetCounter.incrementAndGet()
 
         })
+
+        if (logger.isDebugEnabled()) {
+          logger.debug(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
+        }
+
+      })
 
     } while (resultSetCounter.get() == window)
 
@@ -102,7 +102,6 @@ class MsgPublishTask(topic: String,
         })
       })
     }*/
-
 
 
   }
