@@ -73,7 +73,7 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
     try {
       producer.beginTransaction()
       eventMessage.forEach((eventStore: EventStore) => {
-        producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.uniqueId, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
+        producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
           logger.info(
             s"""in transaction per msg ,send message to broker successful,
         id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
