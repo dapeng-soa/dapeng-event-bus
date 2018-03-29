@@ -10,8 +10,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 --  Table structure for `common_event`
 -- ----------------------------
-DROP TABLE IF EXISTS `common_event`;
-CREATE TABLE `common_event` (
+DROP TABLE IF EXISTS `dp_common_event`;
+CREATE TABLE `dp_common_event` (
   `id` bigint(20) NOT NULL COMMENT '事件id，全局唯一, 可用于幂等操作',
   `event_type` varchar(255) DEFAULT NULL COMMENT '事件类型',
   `event_binary` blob COMMENT '事件内容',
@@ -19,11 +19,10 @@ CREATE TABLE `common_event` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-```
 
-## 作为多节点锁的lock sql
+--  作为多节点锁的lock sql
 
-```sql
+
 /*
  Date: 03/28/2018 22:12:11 PM
 */
@@ -32,8 +31,8 @@ SET NAMES utf8;
 SET FOREIGN_KEY_CHECKS = 0;
 
 
-DROP TABLE IF EXISTS `event_lock`;
-CREATE TABLE `event_lock` (
+DROP TABLE IF EXISTS `dp_event_lock`;
+CREATE TABLE `dp_event_lock` (
   `id` int(11) NOT NULL,
   `name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -42,7 +41,7 @@ CREATE TABLE `event_lock` (
 -- 插入一条数据
 
 BEGIN;
-INSERT INTO `event_lock` VALUES ('1', 'event_lock');
+INSERT INTO `dp_event_lock` VALUES ('1', 'event_lock');
 COMMIT;
 
 SET FOREIGN_KEY_CHECKS = 1;
