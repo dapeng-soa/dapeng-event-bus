@@ -123,6 +123,11 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
+        public ConsumerConfiguration withSessionTimeOut(String sessionTimeOut) {
+            properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeOut);
+            return this;
+        }
+
 
         @Override
         void validate() {

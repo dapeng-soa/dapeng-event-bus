@@ -1,5 +1,6 @@
 package com.today.eventbus;
 
+import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
@@ -58,6 +59,7 @@ public class MsgKafkaConsumer extends Thread {
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
+                .withSessionTimeOut("30000")
                 .build();
 
         consumer = new KafkaConsumer<>(props);
@@ -80,6 +82,12 @@ public class MsgKafkaConsumer extends Thread {
         while (true) {
             try {
                 ConsumerRecords<Long, byte[]> records = consumer.poll(100);
+
+                if (records != null && logger.isDebugEnabled()) {
+                    logger.debug("Received: " + records.count() + " records");
+                }
+
+
                 for (ConsumerRecord<Long, byte[]> record : records) {
                     logger.info("receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
                             record.topic(), record.partition(), record.offset());
@@ -94,6 +102,7 @@ public class MsgKafkaConsumer extends Thread {
                 } catch (CommitFailedException e) {
                     logger.error("commit failed", e);
                 }
+
             } catch (Exception e) {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
             }
@@ -106,7 +115,7 @@ public class MsgKafkaConsumer extends Thread {
      * @param consumer
      * @param message
      */
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] message) {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] message) throws SoaException {
         logger.info("Iterator and process biz message groupId: {}, topic: {}", groupId, topic);
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
@@ -125,8 +134,13 @@ public class MsgKafkaConsumer extends Thread {
                 Object event = processor.decodeMessage(eventBinary, consumer.getEventSerializer());
                 consumer.getMethod().invoke(consumer.getBean(), event);
                 logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
-            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
+
+            } catch (InvocationTargetException e) {
+                Throwable ex = e.getTargetException();
+                logger.error("消息处理失败，消费者抛出异常 " + ex.getMessage(), ex);
+                throw new SoaException("订阅消息处理失败 ", consumer.getMethod().getName());
             } catch (TException e) {
                 logger.error(e.getMessage(), e);
                 logger.error("反序列化事件" + eventType + "出错");
