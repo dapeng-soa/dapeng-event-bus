@@ -92,6 +92,7 @@ public class BinlogKafkaConsumer extends Thread {
                         logger.error("commit failed", e);
                     }
                 }
+
             } catch (Exception e) {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
             }
@@ -100,14 +101,21 @@ public class BinlogKafkaConsumer extends Thread {
 
     private void dealMessage(ConsumerEndpoint consumer, byte[] value) {
         List<BinlogEvent> binlogEvents = BinlogMsgProcessor.process(value);
+        // > 0 才处理
+        if (binlogEvents.size() > 0) {
 
-        try {
-            consumer.getMethod().invoke(consumer.getBean(), binlogEvents);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            logger.error("实例化@BinlogListener 注解的方法 出错", e);
+            try {
+                consumer.getMethod().invoke(consumer.getBean(), binlogEvents);
+            } catch (IllegalAccessException e) {
+                logger.error("实例化@BinlogListener 注解的方法 出错", e);
+            } catch (InvocationTargetException e) {
+                Throwable ex = e.getTargetException();
+                logger.error("消息处理失败，消费者抛出异常 " + ex.getMessage(), ex);
+            }
+
+            logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
         }
 
-        logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
     }
 
     /**

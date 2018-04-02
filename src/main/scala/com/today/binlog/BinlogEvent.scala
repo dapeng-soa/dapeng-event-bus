@@ -52,6 +52,24 @@ object BinlogEvent extends DefaultJsonProtocol {
     }.asJava
   }
 
+
+  implicit object AnyFormat extends spray.json.JsonFormat[Any] {
+    override def read(json: JsValue): Any = {
+      json.convertTo[Any]
+    }
+
+    override def write(obj: Any): JsValue = {
+      obj.getClass.getSimpleName match {
+        case "Long" => JsNumber(obj.toString.toLong)
+        case "String" => JsString(obj.toString)
+        case "Integer" => JsNumber(obj.toString.toInt)
+        case "Double" => JsNumber(obj.toString.toDouble)
+        case _ => obj.toString
+      }
+    }
+  }
+
+
   /**
     * new change
     *
