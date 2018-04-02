@@ -71,19 +71,26 @@ public class BinlogKafkaConsumer extends Thread {
         while (true) {
             try {
                 ConsumerRecords<Integer, byte[]> records = consumer.poll(100);
-                for (ConsumerRecord<Integer, byte[]> record : records) {
-                    logger.info("receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
-                            record.topic(), record.partition(), record.offset());
+                if (records != null && records.count() > 0) {
 
-                    for (ConsumerEndpoint consumer : binlogConsumer) {
-                        dealMessage(consumer, record.value());
+                    if (records != null && logger.isDebugEnabled()) {
+                        logger.debug("Binlog received: " + records.count() + " records");
                     }
-                }
 
-                try {
-                    consumer.commitSync();
-                } catch (CommitFailedException e) {
-                    logger.error("commit failed", e);
+                    for (ConsumerRecord<Integer, byte[]> record : records) {
+                        logger.info("receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
+                                record.topic(), record.partition(), record.offset());
+
+                        for (ConsumerEndpoint consumer : binlogConsumer) {
+                            dealMessage(consumer, record.value());
+                        }
+                    }
+
+                    try {
+                        consumer.commitSync();
+                    } catch (CommitFailedException e) {
+                        logger.error("commit failed", e);
+                    }
                 }
             } catch (Exception e) {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
