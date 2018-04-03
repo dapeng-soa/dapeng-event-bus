@@ -53,7 +53,7 @@ object BinlogEvent extends DefaultJsonProtocol {
   }
 
 
-  implicit object AnyFormat extends spray.json.JsonFormat[Any] {
+  /*implicit object AnyFormat extends spray.json.JsonFormat[Any] {
     override def read(json: JsValue): Any = {
       json.convertTo[Any]
     }
@@ -67,7 +67,7 @@ object BinlogEvent extends DefaultJsonProtocol {
         case _ => obj.toString
       }
     }
-  }
+  }*/
 
 
   /**
@@ -78,11 +78,11 @@ object BinlogEvent extends DefaultJsonProtocol {
     * @date 2018.04.02
     */
   private def getBeforeColumnsList(rowData: RowData): JsValue =
-    rowData.getBeforeColumnsList.asScala.map(column => (column.getName, convert(column.getValue, column.getSqlType))).toMap.toJson
+    rowData.getBeforeColumnsList.asScala.map(column => (column.getName, column.getValue)).toMap.toJson
 
 
   private def getAfterColumnsList(rowData: RowData): JsValue =
-    rowData.getAfterColumnsList.asScala.map(column => (column.getName, convert(column.getValue, column.getSqlType))).toMap.toJson
+    rowData.getAfterColumnsList.asScala.map(column => (column.getName, column.getValue)).toMap.toJson
 
 
   /**
