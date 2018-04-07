@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public class MsgKafkaConsumer extends Thread {
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
-                .withSessionTimeOut("30000")
+                .withSessionTimeOut("100000")
                 .build();
 
         consumer = new KafkaConsumer<>(props);
@@ -85,16 +86,30 @@ public class MsgKafkaConsumer extends Thread {
                 if (records != null && records.count() > 0) {
 
                     if (records != null && logger.isDebugEnabled()) {
-                        logger.debug("Received: " + records.count() + " records");
+                        logger.debug("Per poll received: " + records.count() + " records");
                     }
 
                     for (ConsumerRecord<Long, byte[]> record : records) {
                         logger.info("receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
+                        try {
+                            for (ConsumerEndpoint bizConsumer : bizConsumers) {
+                                dealMessage(bizConsumer, record.value());
+                            }
+                        } catch (Exception e) {
+                            long offset = record.offset();
+                            logger.error(e.getMessage(), e);
+                            logger.error("当前偏移量 {} 处理消息失败，进行重试 ", offset);
 
-                        for (ConsumerEndpoint consumer : bizConsumers) {
-                            dealMessage(consumer, record.value());
+                            int partition = record.partition();
+                            String topic = record.topic();
+                            TopicPartition topicPartition = new TopicPartition(topic, partition);
+
+                            //将offset seek到当前失败的消息位置，前面已经消费的消息的偏移量相当于已经提交了，因为这里seek到偏移量是最新的报错的offset。手动管理偏移量
+                            consumer.seek(topicPartition, offset);
+                            break;
                         }
+
                     }
 
                     try {
