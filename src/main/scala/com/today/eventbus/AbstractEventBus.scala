@@ -6,9 +6,8 @@ import javax.sql.DataSource
 import com.github.dapeng.org.apache.thrift.TException
 import com.today.eventbus.serializer.KafkaMessageProcessor
 import org.slf4j.LoggerFactory
-import wangzx.scala_commons.sql._
-
 import scala.beans.BeanProperty
+import wangzx.scala_commons.sql._
 
 /**
   *
