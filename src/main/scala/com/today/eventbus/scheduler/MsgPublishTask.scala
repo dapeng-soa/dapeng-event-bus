@@ -1,6 +1,5 @@
 package com.today.eventbus.scheduler
 
-import java.sql.Connection
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
