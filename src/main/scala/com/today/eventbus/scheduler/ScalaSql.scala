@@ -6,6 +6,8 @@ import javax.sql.DataSource
 import org.slf4j.{Logger, LoggerFactory}
 import wangzx.scala_commons.sql.{JdbcValue, ResultSetMapper, SQLWithArgs}
 
+import scala.collection.mutable.ListBuffer
+
 /**
   *
   * 描述:
@@ -55,6 +57,24 @@ object ScalaSql {
   def executeUpdate(connection: Connection, stmt: SQLWithArgs): Int = executeUpdateWithGenerateKey(connection, stmt)(null)
 
 
+  def rows[T: ResultSetMapper](conn: Connection, sql: SQLWithArgs): List[T] = withPreparedStatement(sql.sql, conn) { prepared =>
+    val buffer = new ListBuffer[T]()
+    if (sql.args != null) setStatementArgs(prepared, conn, sql.args)
+
+    logger.debug("SQL Preparing: {} args: {}", Seq(sql.sql, sql.args): _*)
+
+    val rs = prepared.executeQuery()
+    val rsMeta = rs.getMetaData
+    while (rs.next()) {
+      val mapped = implicitly[ResultSetMapper[T]].from(rs)
+      buffer += mapped
+
+    }
+    logger.debug("SQL result: {}", buffer.size)
+    buffer.toList
+  }
+
+
   private def withPreparedStatement[T](sql: String, conn: Connection)(f: PreparedStatement => T): T = {
     val stmt = conn.prepareStatement(sql)
     try {
@@ -96,4 +116,7 @@ object ScalaSql {
     }
   }
 
+
 }
+
+

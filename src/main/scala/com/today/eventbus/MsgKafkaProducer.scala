@@ -1,6 +1,5 @@
 package com.today.eventbus
 
-import java.util
 
 import com.today.eventbus.config.KafkaConfigBuilder
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
@@ -12,7 +11,6 @@ import org.slf4j.{Logger, LoggerFactory}
   * 描述: event kafka producer
   *
   * @param serverHost kafka cluster:127.0.0.1:9091,127.0.0.1:9092
-  *
   * @author hz.lei
   * @date 2018年02月28日 下午3:17
   */
@@ -69,14 +67,21 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
     * @param topic
     * @param eventMessage
     */
-  def batchSend(topic: String, eventMessage: util.List[EventStore]): Unit = {
+  def batchSend(topic: String, eventMessage: List[EventStore]): Unit = {
     try {
       producer.beginTransaction()
-      eventMessage.forEach((eventStore: EventStore) => {
+      eventMessage.foreach((eventStore: EventStore) => {
         producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
-          logger.info(
-            s"""in transaction per msg ,send message to broker successful,
-        id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+          if (exception == null) {
+            logger.info(
+              s""" ,send message to broker successful in transaction per msg,
+                 id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+          } else {
+            logger.error(
+              s"""per send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+            throw exception
+          }
+
         })
       })
       producer.commitTransaction()
