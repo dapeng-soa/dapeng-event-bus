@@ -48,6 +48,21 @@ class MsgPublishTask(topic: String,
 
   }
 
+  /**
+    * 基于jdk定时线程池,处理消息轮询发送.... 批量
+    */
+  def startScheduledBatch(): Unit = {
+    val schedulerPublisher = Executors.newScheduledThreadPool(1,
+      new ThreadFactoryBuilder()
+        .setDaemon(true)
+        .setNameFormat("dapeng-eventbus--scheduler-%d")
+        .build)
+    schedulerPublisher.scheduleAtFixedRate(() => {
+      doPublishMessagesBatch()
+    }, initialDelay, period, TimeUnit.MILLISECONDS)
+
+  }
+
 
   /**
     * fetch message from database , then send to kafka broker
@@ -104,15 +119,10 @@ class MsgPublishTask(topic: String,
     }
   }
 
-
-  //old
   /**
-    * fetch message from database , then send to kafka broker
+    * 批量删除并发送消息
     */
-  /*def doPublishMessagesOld(): Unit = {
-    /*if (logger.isDebugEnabled()) {
-      logger.debug("begin to publish messages to kafka")
-    }*/
+  def doPublishMessagesBatch(): Unit = {
 
     // 消息总条数计数器
     val counter = new AtomicInteger(0)
@@ -129,37 +139,27 @@ class MsgPublishTask(topic: String,
       */
     do {
       resultSetCounter.set(0)
-
       withTransaction(dataSource)(conn => {
-
-        eachRow(conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
-
-          eachRow(conn, sql"") { event =>
-
+        eachRow[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
+          if (logger.isTraceEnabled()) {
+            logger.trace("fetch the dp_event_lock")
           }
-
         }
-
-        val lock = conn.row[Row](sql"""SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE """)
-
         // 没有 for update
-        conn.eachRow[EventStore](sql"SELECT * FROM dp_common_event limit ${window}")(event => {
-          val result: Int = conn.executeUpdate(sql"DELETE FROM dp_common_event WHERE id = ${event.id}")
+        val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
+        if (eventMsgs.size > 0) {
+          val idStr: String = eventMsgs.map(_.id).mkString(",")
+          executeUpdate(conn, "DELETE FROM dp_common_event WHERE id in (" + idStr + ")")
 
-          if (result == 1) {
-            producer.send(topic, event.id, event.eventBinary)
-            counter.incrementAndGet()
-          }
-
-          resultSetCounter.incrementAndGet()
-
-        })
-
-        if (counter.get() > 0) {
-          logger.info(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
+          producer.batchSend(topic, eventMsgs)
         }
-
       })
+
+      resultSetCounter.incrementAndGet()
+
+      if (counter.get() > 0) {
+        logger.info(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
+      }
 
     } while (resultSetCounter.get() == window)
 
@@ -168,30 +168,8 @@ class MsgPublishTask(topic: String,
       logger.info(s"end publish messages(${counter.get()}) to kafka")
     }
 
+  }
 
-
-    /*while (resultSetCounter.get() == window) {
-      resultSetCounter.set(0)
-      dataSource.withTransaction[Unit](conn => {
-
-        val lockId: Int = conn.generateKey[Int](sql"INSERT INTO common_event SET unique_id= 0 ,event_type=${lockEventType}")
-
-        //val lockId = insert into xxx
-        conn.eachRow[EventStore](sql"SELECT * FROM common_event WHERE id < ${lockId} limit ${window} FOR UPDATE")(event => {
-          conn.executeUpdate(sql"DELETE FROM common_event WHERE id = ${event.id}")
-          if (event.eventType != lockEventType) {
-            producer.send(topic, event.uniqueId, event.eventBinary)
-
-            counter.incrementAndGet()
-          }
-          resultSetCounter.incrementAndGet()
-
-        })
-      })
-    }*/
-
-
-  }*/
 
 }
 
