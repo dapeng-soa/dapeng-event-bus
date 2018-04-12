@@ -135,7 +135,13 @@ public class MsgKafkaConsumer extends Thread {
         logger.info("Iterator and process biz message groupId: {}, topic: {}", groupId, topic);
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
-        String eventType = processor.getEventType(message);
+        String eventType;
+        try {
+            eventType = processor.getEventType(message);
+        } catch (Exception e) {
+            logger.error("解析消息eventType出错，忽略该消息");
+            return;
+        }
 
         List<Class<?>> parameterTypes = consumer.getParameterTypes();
 
