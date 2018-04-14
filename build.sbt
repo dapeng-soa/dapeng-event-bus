@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "0.1-SNAPSHOT"
+version := "2.0.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
@@ -18,8 +18,8 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-aop" % "4.3.5.RELEASE",
   "org.springframework" % "spring-aspects" % "4.3.5.RELEASE",
   "org.apache.kafka" % "kafka-clients" % "1.0.0",
-  "com.github.wangzaixiang" %% "scala-sql" % "2.0.5",
-  "com.github.dapeng" % "dapeng-utils" % "2.0.1-SNAPSHOT" excludeAll (
+  "com.github.wangzaixiang" %% "scala-sql" % "2.0.6",
+  "com.github.dapeng" % "dapeng-utils" % "2.0.2-SNAPSHOT" excludeAll (
     ExclusionRule().withOrganization("io.netty").withName("netty-all")
     ),
   "com.github.wangzaixiang" %% "spray-json" % "1.3.4",
