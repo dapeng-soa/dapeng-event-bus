@@ -19,7 +19,7 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-aspects" % "4.3.5.RELEASE",
   "org.apache.kafka" % "kafka-clients" % "1.0.0",
   "com.github.wangzaixiang" %% "scala-sql" % "2.0.6",
-  "com.github.dapeng" % "dapeng-utils" % "2.0.2-SNAPSHOT" excludeAll (
+  "com.github.dapeng" % "dapeng-utils" % "2.0.1" excludeAll (
     ExclusionRule().withOrganization("io.netty").withName("netty-all")
     ),
   "com.github.wangzaixiang" %% "spray-json" % "1.3.4",
