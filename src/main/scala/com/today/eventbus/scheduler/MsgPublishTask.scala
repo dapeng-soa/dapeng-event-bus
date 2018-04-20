@@ -1,6 +1,6 @@
 package com.today.eventbus.scheduler
 
-import java.util.UUID
+import java.util.{Random, UUID}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -42,7 +42,13 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
-      doPublishMessages()
+      try {
+        doPublishMessages()
+      } catch {
+        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+      }
+
+
     }, initialDelay, period, TimeUnit.MILLISECONDS)
 
   }
@@ -57,7 +63,12 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
-      doPublishMessagesBatch()
+      try {
+        doPublishMessagesBatch()
+      } catch {
+        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+      }
+
     }, initialDelay, period, TimeUnit.MILLISECONDS)
 
   }
@@ -77,7 +88,6 @@ class MsgPublishTask(topic: String,
     val window = 100
     // 单轮处理的消息计数器, 用于控制循环退出.
     val resultSetCounter = new AtomicInteger(window)
-
 
     /**
       * id: 作用是不锁住全表，获取消息时不会影响插入
