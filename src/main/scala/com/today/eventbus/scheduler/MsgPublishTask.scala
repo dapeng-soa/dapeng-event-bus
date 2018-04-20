@@ -1,6 +1,6 @@
 package com.today.eventbus.scheduler
 
-import java.util.{Random, UUID}
+import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
