@@ -1,5 +1,6 @@
+https://github.com/dapeng-soa/dapeng-event-bus
 
-
+http://pms.today36524.com.cn:8083/basic-services/eventBus
 ## event sql
 
 ```sql
