@@ -1,6 +1,6 @@
 package com.today.eventbus.scheduler
 
-import java.util.UUID
+import java.util.{Calendar, UUID}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -31,6 +31,8 @@ class MsgPublishTask(topic: String,
   logger.warn("Kafka producer transactionId:" + tid)
   val period = SoaSystemEnvProperties.SOA_EVENTBUS_PERIOD.toLong
   val initialDelay = 1000
+
+  val logCount = new AtomicInteger(0)
 
   /**
     * 基于jdk定时线程池,处理消息轮询发送....
@@ -78,9 +80,10 @@ class MsgPublishTask(topic: String,
     * fetch message from database , then send to kafka broker
     */
   def doPublishMessages(): Unit = {
-    /*if (logger.isDebugEnabled()) {
-      logger.debug("begin to publish messages to kafka")
-    }*/
+    val count = logCount.incrementAndGet()
+    if (count == 20) {
+      logger.info("begin to publish messages to kafka")
+    }
 
     // 消息总条数计数器
     val counter = new AtomicInteger(0)
@@ -89,6 +92,7 @@ class MsgPublishTask(topic: String,
     // 单轮处理的消息计数器, 用于控制循环退出.
     val resultSetCounter = new AtomicInteger(window)
 
+    //TODO checkout master
     /**
       * id: 作用是不锁住全表，获取消息时不会影响插入
       *
@@ -98,8 +102,8 @@ class MsgPublishTask(topic: String,
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
         eachRow[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
-          if (logger.isTraceEnabled()) {
-            logger.trace("fetch the dp_event_lock")
+          if (count == 20) {
+            logger.info(s"获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lock_row}")
           }
         }
         // 没有 for update
@@ -125,6 +129,11 @@ class MsgPublishTask(topic: String,
 
     if (counter.get() > 0) {
       logger.info(s"end publish messages(${counter.get()}) to kafka")
+    }
+
+    if (count == 20) {
+      logger.info("[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
+      logCount.set(0)
     }
   }
 
