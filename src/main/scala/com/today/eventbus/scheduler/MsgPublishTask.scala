@@ -31,7 +31,7 @@ class MsgPublishTask(topic: String,
   logger.warn("Kafka producer transactionId:" + tid)
   val period = SoaSystemEnvProperties.SOA_EVENTBUS_PERIOD.toLong
   val initialDelay = 1000
-
+  logger.warn("Kafka producer fetch message period :" + period)
   val logCount = new AtomicInteger(0)
 
   /**
@@ -101,10 +101,14 @@ class MsgPublishTask(topic: String,
     do {
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
-        eachRow[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
+        /*eachRow[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
           if (count == 20) {
             logger.info(s"获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lock_row}")
           }
+        }*/
+        val res = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
+        if (count == 20) {
+          logger.info(s"获得 dp_event_lock 锁,开始查询消息并发送 lock: ${res}")
         }
         // 没有 for update
         eachRow[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}") { event =>
@@ -122,9 +126,11 @@ class MsgPublishTask(topic: String,
           logger.info(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
         }
 
-      })
+      }
+      )
 
-    } while (resultSetCounter.get() == window)
+    }
+    while (resultSetCounter.get() == window)
 
 
     if (counter.get() > 0) {
