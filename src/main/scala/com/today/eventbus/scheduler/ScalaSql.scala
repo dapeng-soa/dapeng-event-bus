@@ -116,6 +116,26 @@ object ScalaSql {
     }
   }
 
+  def row[T: ResultSetMapper](conn: Connection, sql: SQLWithArgs): Option[T] = withPreparedStatement(sql.sql, conn) { prepared =>
+    if (sql.args != null) setStatementArgs(prepared, conn, sql.args)
+
+    logger.debug("SQL Preparing: {} args: {}", Seq(sql.sql, sql.args): _*)
+
+    val rs = prepared.executeQuery()
+
+    var result: Option[T] = None
+    var index = -1
+    while (index == -1 && rs.next()) {
+      index += 1
+      result = Some(implicitly[ResultSetMapper[T]].from(rs))
+    }
+    if (rs.next)
+      logger.warn("expect 1 row but really more. SQL result: {}", rs.getRow - 1)
+    else
+      logger.debug("SQL result: {}", rs.getRow)
+
+    result
+  }
 
 }
 
