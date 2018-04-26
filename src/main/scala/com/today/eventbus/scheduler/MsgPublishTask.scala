@@ -4,7 +4,7 @@ import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.dapeng.util.SoaSystemEnvProperties
+import com.github.dapeng.core.helper.{MasterHelper, SoaSystemEnvProperties}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
@@ -23,14 +23,22 @@ import wangzx.scala_commons.sql._
 class MsgPublishTask(topic: String,
                      kafkaHost: String,
                      tidPrefix: String,
+                     serviceName: String,
+                     version: String = "1.0.0",
                      dataSource: DataSource) {
+
   private val logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
+
   //transId: kafka消息对事务的支持前提，需要每一个生产者实例有不同的事务ID，全局唯一
   private val tid = tidPrefix + UUID.randomUUID().toString
   private val producer = new MsgKafkaProducer(kafkaHost, tid)
   logger.warn("Kafka producer transactionId:" + tid)
+
   val period = SoaSystemEnvProperties.SOA_EVENTBUS_PERIOD.toLong
   val initialDelay = 1000
+  logger.warn("Kafka producer fetch message period :" + period)
+
+  val logCount = new AtomicInteger(0)
 
   /**
     * 基于jdk定时线程池,处理消息轮询发送....
@@ -42,10 +50,13 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
-      try {
-        doPublishMessages()
-      } catch {
-        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+
+      if (MasterHelper.isMaster(serviceName, version)) {
+        try {
+          doPublishMessages()
+        } catch {
+          case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+        }
       }
 
 
@@ -63,10 +74,13 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
-      try {
-        doPublishMessagesBatch()
-      } catch {
-        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+
+      if (MasterHelper.isMaster(serviceName, version)) {
+        try {
+          doPublishMessagesBatch()
+        } catch {
+          case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+        }
       }
 
     }, initialDelay, period, TimeUnit.MILLISECONDS)
@@ -78,9 +92,10 @@ class MsgPublishTask(topic: String,
     * fetch message from database , then send to kafka broker
     */
   def doPublishMessages(): Unit = {
-    /*if (logger.isDebugEnabled()) {
-      logger.debug("begin to publish messages to kafka")
-    }*/
+    val count = logCount.incrementAndGet()
+    if (count == 20) {
+      logger.info("begin to publish messages to kafka")
+    }
 
     // 消息总条数计数器
     val counter = new AtomicInteger(0)
@@ -97,12 +112,11 @@ class MsgPublishTask(topic: String,
     do {
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
-        eachRow[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
-          if (logger.isTraceEnabled()) {
-            logger.trace("fetch the dp_event_lock")
-          }
+        val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
+        if (count == 20) {
+          logger.info(s"获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
         }
-        // 没有 for update
+
         eachRow[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}") { event =>
           val result: Int = executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${event.id}")
 
@@ -117,14 +131,19 @@ class MsgPublishTask(topic: String,
         if (counter.get() > 0) {
           logger.info(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
         }
-
       })
 
-    } while (resultSetCounter.get() == window)
+    }
+    while (resultSetCounter.get() == window)
 
 
     if (counter.get() > 0) {
       logger.info(s"end publish messages(${counter.get()}) to kafka")
+    }
+
+    if (count == 20) {
+      logger.info("[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
+      logCount.set(0)
     }
   }
 
@@ -132,6 +151,11 @@ class MsgPublishTask(topic: String,
     * 批量删除并发送消息
     */
   def doPublishMessagesBatch(): Unit = {
+
+    val count = logCount.incrementAndGet()
+    if (count == 20) {
+      logger.info("begin to publish messages to kafka")
+    }
 
     // 消息总条数计数器
     val counter = new AtomicInteger(0)
@@ -149,12 +173,11 @@ class MsgPublishTask(topic: String,
     do {
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
-        eachRow[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE") { lock_row =>
-          if (logger.isTraceEnabled()) {
-            logger.trace("fetch the dp_event_lock")
-          }
+        val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
+        if (count == 20) {
+          logger.info(s"获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
         }
-        // 没有 for update
+
         val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
         if (eventMsgs.size > 0) {
           val idStr: String = eventMsgs.map(_.id).mkString(",")
@@ -175,6 +198,11 @@ class MsgPublishTask(topic: String,
 
     if (counter.get() > 0) {
       logger.info(s"end publish messages(${counter.get()}) to kafka")
+    }
+
+    if (count == 20) {
+      logger.info("[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
+      logCount.set(0)
     }
 
   }
