@@ -50,6 +50,7 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
+
       if (MasterHelper.isMaster(serviceName, version)) {
         try {
           doPublishMessages()
@@ -71,6 +72,7 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
+
       if (MasterHelper.isMaster(serviceName, version)) {
         try {
           doPublishMessagesBatch()
