@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * 描述:
+ * 描述: 处理 binlog 缓存 监听 事件
  *
  * @author hz.lei
  * @date 2018年03月07日 上午1:42

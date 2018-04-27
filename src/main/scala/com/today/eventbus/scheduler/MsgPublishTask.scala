@@ -152,10 +152,11 @@ class MsgPublishTask(topic: String,
     * 批量删除并发送消息
     */
   def doPublishMessagesBatch(): Unit = {
+    // log日志多久打印一次
+    val logPeriod = logCount.incrementAndGet()
 
-    val count = logCount.incrementAndGet()
-    if (count == 20) {
-      logger.info("begin to publish messages to kafka")
+    if (logPeriod == 50) {
+      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::begin to publish messages to kafka")
     }
 
     // 消息总条数计数器
@@ -175,8 +176,9 @@ class MsgPublishTask(topic: String,
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
         val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
-        if (count == 20) {
-          logger.info(s"获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
+
+        if (logPeriod == 50) {
+          logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: 获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
         }
 
         val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
@@ -201,8 +203,8 @@ class MsgPublishTask(topic: String,
       logger.info(s"end publish messages(${counter.get()}) to kafka")
     }
 
-    if (count == 20) {
-      logger.info("[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
+    if (logPeriod == 50) {
+      logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: MsgPublishTask 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
 
