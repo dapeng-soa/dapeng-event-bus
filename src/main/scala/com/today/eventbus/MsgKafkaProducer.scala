@@ -72,19 +72,17 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
       producer.beginTransaction()
       eventMessage.foreach((eventStore: EventStore) => {
         producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
-          if (exception == null) {
-            logger.info(
-              s""" ,send message to broker successful in transaction per msg,
-                 id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
-          } else {
+          if (exception != null) {
             logger.error(
-              s"""per send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+              s"""MsgKafkaProducer <--> batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
             throw exception
           }
 
         })
       })
       producer.commitTransaction()
+      logger.info(s"""MsgKafkaProducer <--> batch  send [${eventMessage.size}] message to broker successful in transaction""")
+
     } catch {
       case e: Exception =>
         producer.abortTransaction()
