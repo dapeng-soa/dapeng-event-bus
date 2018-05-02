@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<consumer>
+    <endpoint>
+        <id>1</id>
+        <groupId>test</groupId>
+        <topic>member_test</topic>
+        <eventType>com.github.dapeng.registry.ConfigKey</eventType>
+        <kafkaHostKey>kafka.consumer.host</kafkaHostKey>
+        <service>com.today.api.demo.service.UserService</service>
+        <version>1.0.0</version>
+        <event>com.today.user.events.RegisteredEvent</event>
+        <uri>http://127.0.0.1:8989/http</uri>
+    </endpoint>
+
+    <endpoint>
+        <id>2</id>
+        <groupId>test2</groupId>
+        <topic>member_test</topic>
+        <eventType>com.github.dapeng.registry.ConfigKey2</eventType>
+        <service>com.today.api.demo.service.UserService</service>
+        <version>1.0.0</version>
+        <event>com.today.user.events.ActivetedEvent</event>
+        <uri>http://127.0.0.1:8989/http</uri>
+    </endpoint>
+</consumer>
