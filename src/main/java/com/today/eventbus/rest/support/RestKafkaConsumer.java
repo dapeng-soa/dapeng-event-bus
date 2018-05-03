@@ -11,6 +11,7 @@ import com.github.dapeng.util.TKafkaTransport;
 import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -18,6 +19,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -29,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -162,43 +165,62 @@ public class RestKafkaConsumer extends Thread {
             logger.error("解析消息eventType出错，忽略该消息");
             return;
         }
+
         /**
          * 事件类型和 传入的even最后的事件名一致才处理
          */
         if (checkEquals(eventType, bizConsumer.getEvent())) {
             byte[] eventBinary = processor.getEventBinary();
             JsonSerializer jsonDecoder = new JsonSerializer(service, null/*, bizConsumer.getVersion()*/, MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
             List<NameValuePair> pairs = combinesParams(eventType, body);
+            CloseableHttpResponse postResult = post(bizConsumer.getUri(), pairs);
             try {
-                CloseableHttpResponse post = post(bizConsumer.getUri(), pairs);
-                if (post.getStatusLine().getStatusCode() != 200) {
+                if (postResult.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    String content = EntityUtils.toString(postResult.getEntity(), "UTF-8");
+                    String resp = new String(content.getBytes(), "UTF-8");
+                    logger.info("response code: " + resp);
+                } else {
                     //重试
-                    logger.error("httpClient error");
+                    logger.error("[HttpClient] 调用远程url error");
                     InnerExecutor.service.execute(() -> {
-                        try {
-                            CloseableHttpResponse threadResult;
-                            do {
-                                threadResult = post(bizConsumer.getUri(), pairs);
-
-                            } while (threadResult.getStatusLine().getStatusCode() != 200);
-                        } catch (IOException e) {
-                            logger.error("[HttpClient] io 异常 " + e.getMessage(), e);
-                        }
+                        int i = 1;
+                        CloseableHttpResponse threadResult;
+                        do {
+                            logger.info("[HttpClient] 线程: " + Thread.currentThread().getName() + " 进行重试,重试次数：" + i);
+                            threadResult = post(bizConsumer.getUri(), pairs);
+                        } while (i++ <= 3 && threadResult.getStatusLine().getStatusCode() != 200);
                     });
                 }
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
+            } finally {
+                try {
+                    postResult.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
             }
         }
     }
 
-    public CloseableHttpResponse post(String uri, List<NameValuePair> arguments) throws IOException {
+    public CloseableHttpResponse post(String uri, List<NameValuePair> arguments) {
+        logger.info("收到消息并代理成功,准备通过httpClient请求！");
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
-        httpPost.setEntity(new UrlEncodedFormEntity(arguments, "UTF-8"));
-        CloseableHttpResponse response = httpClient.execute(httpPost);
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(arguments, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+        }
+
+        CloseableHttpResponse response = null;
+        try {
+            response = httpClient.execute(httpPost);
+        } catch (IOException e) {
+            logger.error("[execute httpClient error] " + e.getMessage(), e);
+        }
         return response;
     }
 
