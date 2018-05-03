@@ -5,7 +5,6 @@ import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.dapeng.util.SoaSystemEnvProperties
-import com.github.dapeng.core.helper.MasterHelper
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
@@ -24,8 +23,6 @@ import wangzx.scala_commons.sql._
 class MsgPublishTask(topic: String,
                      kafkaHost: String,
                      tidPrefix: String,
-                     serviceName: String,
-                     version: String = "1.0.0",
                      dataSource: DataSource) {
 
   private val logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
@@ -53,15 +50,11 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
-
-      if (MasterHelper.isMaster(serviceName, version)) {
-        try {
-          doPublishMessagesAsync()
-        } catch {
-          case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
-        }
+      try {
+        doPublishMessagesAsync()
+      } catch {
+        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
       }
-
     }, initialDelay, period, TimeUnit.MILLISECONDS)
 
   }
@@ -76,15 +69,11 @@ class MsgPublishTask(topic: String,
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
-
-      if (MasterHelper.isMaster(serviceName, version)) {
-        try {
-          doPublishMessagesSync()
-        } catch {
-          case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
-        }
+      try {
+        doPublishMessagesSync()
+      } catch {
+        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
       }
-
 
     }, initialDelay, period, TimeUnit.MILLISECONDS)
 
