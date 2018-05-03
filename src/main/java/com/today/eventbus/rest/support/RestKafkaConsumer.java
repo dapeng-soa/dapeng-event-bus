@@ -205,8 +205,8 @@ public class RestKafkaConsumer extends Thread {
 
     public List<NameValuePair> combinesParams(String eventType, String params) {
         List<NameValuePair> pairs = new ArrayList<>(4);
-        pairs.add(new BasicNameValuePair("eventType", eventType));
-        pairs.add(new BasicNameValuePair("params", params));
+        pairs.add(new BasicNameValuePair("event", eventType));
+        pairs.add(new BasicNameValuePair("body", params));
 
         return pairs;
     }
