@@ -4,8 +4,8 @@ import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
-//import com.github.dapeng.util.SoaSystemEnvProperties
-import com.github.dapeng.core.helper.{MasterHelper, SoaSystemEnvProperties}
+import com.github.dapeng.util.SoaSystemEnvProperties
+import com.github.dapeng.core.helper.MasterHelper
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
