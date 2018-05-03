@@ -17,9 +17,9 @@ import java.util.Map;
  * @author hz.lei
  * @date 2018年03月02日 上午1:29
  */
-public class RestListenerFactoryBean implements InitializingBean {
+public class RestListenerFactory implements InitializingBean {
 
-    private static final Logger logger = LoggerFactory.getLogger(RestListenerFactoryBean.class);
+    private static final Logger logger = LoggerFactory.getLogger(RestListenerFactory.class);
 
     public static final Map<String, RestKafkaConsumer> REST_CONSUMERS = new HashMap<>();
 

@@ -140,7 +140,19 @@ public class RestKafkaConsumer extends Thread {
     }
 
     private void dealMessage(RestConsumerEndpoint bizConsumer, byte[] value) throws TException {
+
         Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
+        if (service == null) {
+            int i = 3;
+            while (service == null && i > 0) {
+                service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
+                i--;
+                try {
+                    Thread.sleep(i * 1000);
+                } catch (InterruptedException e) {
+                }
+            }
+        }
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
         String eventType;
         try {
@@ -211,21 +223,7 @@ public class RestKafkaConsumer extends Thread {
         return false;
     }
 
-
     private static class InnerExecutor {
         private static ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-    }
-
-    public static void main(String[] args) {
-
-        String evetType = "com.maple.scala.RegisterEvent";
-        String event = "com.maple.RegisterEvent";
-
-        RestKafkaConsumer consumer = new RestKafkaConsumer("127.0.0.1:9092", "aa", "aa");
-        boolean b = consumer.checkEquals(evetType, event);
-
-        System.out.println(b);
-
-
     }
 }
