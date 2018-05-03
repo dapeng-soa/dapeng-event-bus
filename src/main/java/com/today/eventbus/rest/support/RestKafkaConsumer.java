@@ -8,7 +8,6 @@ import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
 import com.github.dapeng.util.MetaDataUtil;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
-import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
@@ -34,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 描述: com.today.eventbus.rest.support
@@ -140,7 +141,6 @@ public class RestKafkaConsumer extends Thread {
 
     private void dealMessage(RestConsumerEndpoint bizConsumer, byte[] value) throws TException {
         Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
-
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
         String eventType;
         try {
@@ -150,22 +150,36 @@ public class RestKafkaConsumer extends Thread {
             logger.error("解析消息eventType出错，忽略该消息");
             return;
         }
-        byte[] eventBinary = processor.getEventBinary();
+        /**
+         * 事件类型和 传入的even最后的事件名一致才处理
+         */
+        if (checkEquals(eventType, bizConsumer.getEvent())) {
+            byte[] eventBinary = processor.getEventBinary();
+            JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+            String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
-        JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
-        String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
+            List<NameValuePair> pairs = combinesParams(eventType, body);
+            try {
+                CloseableHttpResponse post = post(bizConsumer.getUri(), pairs);
+                if (post.getStatusLine().getStatusCode() != 200) {
+                    //重试
+                    logger.error("httpClient error");
+                    InnerExecutor.service.execute(() -> {
+                        try {
+                            CloseableHttpResponse threadResult;
+                            do {
+                                threadResult = post(bizConsumer.getUri(), pairs);
 
-        List<NameValuePair> pairs = combinesParams(eventType, body);
-        try {
-            CloseableHttpResponse post = post(bizConsumer.getUri(), pairs);
-            if (post.getStatusLine().getStatusCode() != 200) {
-                //重试
-                logger.error("httpClient error");
+                            } while (threadResult.getStatusLine().getStatusCode() != 200);
+                        } catch (IOException e) {
+                            logger.error("[HttpClient] io 异常 " + e.getMessage(), e);
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
             }
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
         }
-
     }
 
     public CloseableHttpResponse post(String uri, List<NameValuePair> arguments) throws IOException {
@@ -185,5 +199,33 @@ public class RestKafkaConsumer extends Thread {
         return pairs;
     }
 
+    private boolean checkEquals(String eventType, String event) {
+        try {
+            String endEventType = eventType.substring(eventType.lastIndexOf("."));
+            String endEvent = event.substring(event.lastIndexOf("."));
+            return endEvent.equals(endEventType);
 
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return false;
+    }
+
+
+    private static class InnerExecutor {
+        private static ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    }
+
+    public static void main(String[] args) {
+
+        String evetType = "com.maple.scala.RegisterEvent";
+        String event = "com.maple.RegisterEvent";
+
+        RestKafkaConsumer consumer = new RestKafkaConsumer("127.0.0.1:9092", "aa", "aa");
+        boolean b = consumer.checkEquals(evetType, event);
+
+        System.out.println(b);
+
+
+    }
 }
