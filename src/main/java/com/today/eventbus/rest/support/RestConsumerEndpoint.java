@@ -3,9 +3,6 @@ package com.today.eventbus.rest.support;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
 /**
  * 描述: xml 解析
  *
@@ -17,26 +14,25 @@ public class RestConsumerEndpoint {
 
     @Element(required = false)
     private String id;
+
     @Element(name = "groupId")
     private String groupId;
+
     @Element
     private String topic;
+
     @Element(required = false)
     private String eventType;
-    @Element(required = false)
-    private Method method;
-    @Element(required = false)
-    private Object bean;
-    @Element(required = false)
-    private List<Class<?>> parameterTypes;
-    @Element
-    private String kafkaHostKey = "kafka.consumer.host";
 
+    @Element
+    private String kafkaHost;
 
     @Element
     private String service;
+
     @Element
     private String version;
+
     @Element
     private String event;
 
@@ -75,36 +71,8 @@ public class RestConsumerEndpoint {
         this.eventType = eventType;
     }
 
-    public Method getMethod() {
-        return method;
-    }
-
-    public void setMethod(Method method) {
-        this.method = method;
-    }
-
-    public Object getBean() {
-        return bean;
-    }
-
-    public void setBean(Object bean) {
-        this.bean = bean;
-    }
-
-    public List<Class<?>> getParameterTypes() {
-        return parameterTypes;
-    }
-
-    public void setParameterTypes(List<Class<?>> parameterTypes) {
-        this.parameterTypes = parameterTypes;
-    }
-
-    public String getKafkaHostKey() {
-        return kafkaHostKey;
-    }
-
-    public void setKafkaHostKey(String kafkaHostKey) {
-        this.kafkaHostKey = kafkaHostKey;
+    public void setKafkaHost(String kafkaHost) {
+        this.kafkaHost = kafkaHost;
     }
 
     public String getService() {
@@ -140,6 +108,10 @@ public class RestConsumerEndpoint {
     }
 
     public String getKafkaHost() {
+        return kafkaHost;
+    }
+
+    /*public String getKafkaHost() {
         String kafkaHost = System.getenv(kafkaHostKey.replaceAll("\\.", "_"));
         if (kafkaHost == null) {
             kafkaHost = System.getProperty(kafkaHostKey);
@@ -148,5 +120,5 @@ public class RestConsumerEndpoint {
             kafkaHost = "127.0.0.1:9092";
         }
         return kafkaHost;
-    }
+    }*/
 }

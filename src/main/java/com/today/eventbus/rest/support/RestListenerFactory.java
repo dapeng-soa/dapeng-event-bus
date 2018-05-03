@@ -37,9 +37,7 @@ public class RestListenerFactory implements InitializingBean {
             logger.error(e.getMessage(), e);
         }
         Assert.notNull(config, "Endpoint must be set");
-        config.getRestConsumerEndpoints().forEach(endpoint -> {
-            addConsumer(endpoint);
-        });
+        config.getRestConsumerEndpoints().forEach(endpoint -> addConsumer(endpoint));
     }
 
     public void addConsumer(RestConsumerEndpoint endpoint) {

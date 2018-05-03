@@ -167,7 +167,7 @@ public class RestKafkaConsumer extends Thread {
          */
         if (checkEquals(eventType, bizConsumer.getEvent())) {
             byte[] eventBinary = processor.getEventBinary();
-            JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+            JsonSerializer jsonDecoder = new JsonSerializer(service, null/*, bizConsumer.getVersion()*/, MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
             List<NameValuePair> pairs = combinesParams(eventType, body);
