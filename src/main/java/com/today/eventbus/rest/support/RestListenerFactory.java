@@ -37,8 +37,12 @@ public class RestListenerFactory implements InitializingBean {
             logger.error(e.getMessage(), e);
         }
         Assert.notNull(config, "Endpoint must be set");
+
+        transferEl(config);
+
         config.getRestConsumerEndpoints().forEach(endpoint -> addConsumer(endpoint));
     }
+
 
     public void addConsumer(RestConsumerEndpoint endpoint) {
         String groupId = endpoint.getGroupId();
@@ -65,6 +69,47 @@ public class RestListenerFactory implements InitializingBean {
         registerEndpoint();
         logger.info("[RestConsumer]: ready to start rest consumer ,rest event consumer size {}", REST_CONSUMERS.size());
         REST_CONSUMERS.values().forEach(Thread::start);
+    }
+
+    private void transferEl(RestConsumerConfig config) {
+        config.getRestConsumerEndpoints().forEach(endpoint -> {
+            String groupIdKey = endpoint.getGroupId();
+            String kafkaHostKey = endpoint.getKafkaHost();
+            String uriKey = endpoint.getUri();
+
+            String groupId = get(groupIdKey, null);
+            String kafkaHost = get(kafkaHostKey, null);
+            String uri = get(uriKey, null);
+            logger.info("transfer env key, endpoint id: {}, groupId: {}, kafkaHost: {}, uri: {}", endpoint.getId(), groupId, kafkaHost, uri);
+
+            if (groupId != null && kafkaHost != null && uri != null) {
+                endpoint.setGroupId(groupId);
+                endpoint.setKafkaHost(kafkaHost);
+                endpoint.setUri(uri);
+            } else {
+                throw new NullPointerException("消息代理需要的环境参数groupId,kafkaHost,uriKey不能为空");
+            }
+        });
+
+
+    }
+
+    public static String get(String key, String defaultValue) {
+        String envValue = System.getenv(key.replaceAll("\\.", "_"));
+
+        if (envValue == null)
+            return System.getProperty(key, defaultValue);
+
+        return envValue;
+    }
+
+    public static void main(String[] args) {
+        RestListenerFactory factory = new RestListenerFactory();
+        factory.registerEndpoint();
+
+
+
+
     }
 
 }
