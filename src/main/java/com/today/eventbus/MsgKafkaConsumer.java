@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -98,8 +99,8 @@ public class MsgKafkaConsumer extends Thread {
                             }
                         } catch (Exception e) {
                             long offset = record.offset();
-                            logger.error(e.getMessage(), e);
-                            logger.error("当前偏移量 {} 处理消息失败，进行重试 ", offset);
+                            logger.error("[dealMessage error]: " + e.getMessage());
+                            logger.error("[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
 
                             int partition = record.partition();
                             String topic = record.topic();
@@ -139,7 +140,7 @@ public class MsgKafkaConsumer extends Thread {
         try {
             eventType = processor.getEventType(message);
         } catch (Exception e) {
-            logger.error("解析消息eventType出错，忽略该消息");
+            logger.error("[Parse Error]: 解析消息eventType出错，忽略该消息");
             return;
         }
 
@@ -158,17 +159,13 @@ public class MsgKafkaConsumer extends Thread {
                 logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
-
             } catch (InvocationTargetException e) {
-                Throwable ex = e.getTargetException();
-                logger.error("消息处理失败，消费者抛出异常 " + ex.getMessage(), ex);
-                throw new SoaException("订阅消息处理失败 ", consumer.getMethod().getName());
+                // 包装异常处理
+                throwEx(e, consumer.getMethod().getName());
             } catch (TException e) {
-                logger.error(e.getMessage(), e);
-                logger.error("反序列化事件" + eventType + "出错");
+                logger.error("[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
             } catch (InstantiationException e) {
-                logger.error(e.getMessage(), e);
-                logger.error("实例化事件" + eventType + "对应的编解码器失败");
+                logger.error("[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
             }
         } else {
             logger.debug("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
@@ -176,4 +173,26 @@ public class MsgKafkaConsumer extends Thread {
     }
 
 
+    /**
+     * 1. 反射调用的 目标类如果抛出异常 ，将被包装为 InvocationTargetException e
+     * 2. 通过  InvocationTargetException.getTargetException 可以得到目标具体抛出的异常
+     * 3. 如果目标类是通过aop代理的类,此时获得的异常会是 UndeclaredThrowableException
+     * 4.如果目标类不是代理类，获得异常将直接为原始目标方法抛出的异常
+     * <p>
+     * 因此,需要判断目标异常如果为UndeclaredThrowableException，需要再次 getCause 拿到原始异常
+     */
+    private void throwEx(InvocationTargetException e, String methodName) throws SoaException {
+        Throwable target = e.getTargetException();
+
+        if (target instanceof UndeclaredThrowableException) {
+            target = target.getCause();
+        }
+        logger.error("[TargetException]:" + target.getClass(), target.getMessage());
+
+        if (target instanceof SoaException) {
+            logger.error("[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage(), target);
+            return;
+        }
+        throw new SoaException("[订阅者处理消息失败,会重试] throws: " + target.getMessage(), methodName);
+    }
 }
