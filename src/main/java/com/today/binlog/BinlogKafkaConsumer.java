@@ -25,12 +25,11 @@ import java.util.Properties;
  * @date 2018年03月07日 上午1:42
  */
 public class BinlogKafkaConsumer extends Thread {
-
-    private static final Logger logger = LoggerFactory.getLogger(MsgKafkaConsumer.class);
+    private static final Logger logger = LoggerFactory.getLogger(BinlogKafkaConsumer.class);
+    private List<ConsumerEndpoint> binlogConsumer = new ArrayList<>();
     private String groupId;
     private String topic;
     private String kafkaConnect;
-    private List<ConsumerEndpoint> binlogConsumer = new ArrayList<>();
     protected KafkaConsumer<Integer, byte[]> consumer;
 
     /**
