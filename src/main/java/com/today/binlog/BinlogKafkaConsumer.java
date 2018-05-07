@@ -1,5 +1,7 @@
 package com.today.binlog;
 
+import com.github.dapeng.core.SoaException;
+import com.today.common.MsgConsumer;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.config.KafkaConfigBuilder;
@@ -24,13 +26,8 @@ import java.util.Properties;
  * @author hz.lei
  * @date 2018年03月07日 上午1:42
  */
-public class BinlogKafkaConsumer extends Thread {
-    private static final Logger logger = LoggerFactory.getLogger(BinlogKafkaConsumer.class);
-    private List<ConsumerEndpoint> binlogConsumer = new ArrayList<>();
-    private String groupId;
-    private String topic;
-    private String kafkaConnect;
-    protected KafkaConsumer<Integer, byte[]> consumer;
+public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[]> {
+
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...
@@ -38,13 +35,11 @@ public class BinlogKafkaConsumer extends Thread {
      * @param topic
      */
     public BinlogKafkaConsumer(String kafkaHost, String groupId, String topic) {
-        this.kafkaConnect = kafkaHost;
-        this.groupId = groupId;
-        this.topic = topic;
-        this.init();
+        super(kafkaHost, groupId, topic);
     }
 
-    private void init() {
+    @Override
+    protected void init() {
         logger.info(new StringBuffer("[KafkaConsumer] [init] ")
                 .append("kafkaConnect(").append(kafkaConnect)
                 .append(") groupId(").append(groupId)
@@ -64,65 +59,19 @@ public class BinlogKafkaConsumer extends Thread {
 
 
     @Override
-    public void run() {
-        logger.info("[KafkaConsumer][{}][run] ", this.groupId + ":" + this.topic);
-        this.consumer.subscribe(Arrays.asList(this.topic));
-        while (true) {
-            try {
-                ConsumerRecords<Integer, byte[]> records = consumer.poll(100);
-                if (records != null && records.count() > 0) {
-
-                    if (records != null && logger.isDebugEnabled()) {
-                        logger.debug("Binlog received: " + records.count() + " records");
-                    }
-
-                    for (ConsumerRecord<Integer, byte[]> record : records) {
-                        logger.info("receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
-                                record.topic(), record.partition(), record.offset());
-
-                        for (ConsumerEndpoint consumer : binlogConsumer) {
-                            dealMessage(consumer, record.value());
-                        }
-                    }
-
-                    try {
-                        consumer.commitSync();
-                    } catch (CommitFailedException e) {
-                        logger.error("commit failed", e);
-                    }
-                }
-
-            } catch (Exception e) {
-                logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
-            }
-        }
-    }
-
-    private void dealMessage(ConsumerEndpoint consumer, byte[] value) {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] value) throws SoaException {
         List<BinlogEvent> binlogEvents = BinlogMsgProcessor.process(value);
         // > 0 才处理
         if (binlogEvents.size() > 0) {
-
             try {
                 consumer.getMethod().invoke(consumer.getBean(), binlogEvents);
             } catch (IllegalAccessException e) {
                 logger.error("实例化@BinlogListener 注解的方法 出错", e);
             } catch (InvocationTargetException e) {
-                Throwable ex = e.getTargetException();
-                logger.error("消息处理失败，消费者抛出异常 " + ex.getMessage(), ex);
+                throwEx(e, consumer.getMethod().getName());
             }
-
-            logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
+            logger.info("[" + getClass().getSimpleName() + "]: invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
         }
 
-    }
-
-    /**
-     * 添加相同的 group + topic
-     *
-     * @param endpoint
-     */
-    public void addConsumer(ConsumerEndpoint endpoint) {
-        binlogConsumer.add(endpoint);
     }
 }
