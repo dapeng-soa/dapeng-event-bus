@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "1.0-SNAPSHOT"
+version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
@@ -28,10 +28,9 @@ libraryDependencies ++= Seq(
     ExclusionRule().withOrganization("com.alibaba.otter").withName("canal.common"),
     ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
   ),
-  "com.github.dapeng" % "dapeng-open-api" % "2.0.1",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.5",
-  "org.simpleframework" % "simple-xml" % "2.7.1",
-  "com.esotericsoftware.yamlbeans" % "yamlbeans" % "1.13"
+  "com.github.dapeng" %"dapeng-open-api"%"2.0.1",
+  "org.apache.httpcomponents" %"httpclient"%"4.5.5",
+  "org.simpleframework" % "simple-xml" % "2.7.1"
 )
 
 javacOptions ++= Seq("-encoding", "UTF-8")
