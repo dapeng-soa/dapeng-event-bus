@@ -66,11 +66,13 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[]> {
             try {
                 consumer.getMethod().invoke(consumer.getBean(), binlogEvents);
             } catch (IllegalAccessException e) {
-                logger.error("实例化@BinlogListener 注解的方法 出错", e);
+                logger.error("[" + getClass().getSimpleName() + "] <-> 实例化@BinlogListener 注解的方法 出错", e);
             } catch (InvocationTargetException e) {
                 throwEx(e, consumer.getMethod().getName());
             }
-            logger.info("[" + getClass().getSimpleName() + "]: invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
+            logger.info("[{}]<->[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}",
+                    consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+
         }
 
     }

@@ -28,13 +28,12 @@ public class KafkaMessageProcessor<T> {
      * @throws TException
      */
     public T decodeMessage(byte[] msgBytes, BeanSerializer<T> beanSerializer) throws TException {
-        logger.info("fetch event body: ");
         TKafkaTransport kafkaTransport = new TKafkaTransport(msgBytes, TKafkaTransport.Type.Read);
         TCompactProtocol protocol = new TCompactProtocol(kafkaTransport);
 
         T event = beanSerializer.read(protocol);
 
-        logger.info("dealMessage:event {}", event.toString());
+        logger.info("[decode] 解码消息 event: {}", event.toString());
         return event;
     }
 
