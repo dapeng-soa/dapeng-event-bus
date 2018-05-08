@@ -1,5 +1,6 @@
 package com.today.eventbus.config;
 
+import com.today.common.SysEnvUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -10,6 +11,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * 描述: kafka producer和consumer properties 默认配置
@@ -54,8 +56,8 @@ public abstract class KafkaConfigBuilder {
         final ConsumerConfiguration builder = new ConsumerConfiguration();
         builder.withKeyDeserializer(StringDeserializer.class);
         builder.withValueDeserializer(StringDeserializer.class);
+        builder.withClientId("Consumer-" + SysEnvUtil.SOA_CONTAINER_IP + "-" + UUID.randomUUID().toString());
         fill(properties, builder.properties);
-
         return builder;
     }
 
@@ -125,6 +127,11 @@ public abstract class KafkaConfigBuilder {
 
         public ConsumerConfiguration withSessionTimeOut(String sessionTimeOut) {
             properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeOut);
+            return this;
+        }
+
+        public ConsumerConfiguration withClientId(String clientId) {
+            properties.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId);
             return this;
         }
 

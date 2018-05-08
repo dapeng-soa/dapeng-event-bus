@@ -26,7 +26,7 @@ import java.util.Properties;
  * @author hz.lei
  * @date 2018年03月07日 上午1:42
  */
-public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[]> {
+public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEndpoint> {
 
 
     /**
