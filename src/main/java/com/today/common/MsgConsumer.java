@@ -1,7 +1,7 @@
 package com.today.common;
 
 import com.github.dapeng.core.SoaException;
-import com.today.eventbus.ConsumerEndpoint;
+import com.github.dapeng.org.apache.thrift.TException;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -22,11 +22,11 @@ import java.util.List;
  * @author hz.lei
  * @date 2018年05月07日 下午3:28
  */
-public abstract class MsgConsumer<KEY, VALUE> extends Thread {
+public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected List<ConsumerEndpoint> bizConsumers = new ArrayList<>();
+    protected List<ENDPOINT> bizConsumers = new ArrayList<>();
 
     protected String groupId;
 
@@ -48,7 +48,7 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
      *
      * @param endpoint
      */
-    public void addConsumer(ConsumerEndpoint endpoint) {
+    public void addConsumer(ENDPOINT endpoint) {
         this.bizConsumers.add(endpoint);
 
     }
@@ -68,7 +68,7 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
                         logger.info("[" + getClass().getSimpleName() + "] record receive message to process, topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
-                            for (ConsumerEndpoint bizConsumer : bizConsumers) {
+                            for (ENDPOINT bizConsumer : bizConsumers) {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
@@ -137,7 +137,7 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
      * @param value
      * @throws SoaException
      */
-    protected abstract void dealMessage(ConsumerEndpoint bizConsumer, VALUE value) throws SoaException;
+    protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value) throws TException;
 
     /**
      * 初始化 consumer

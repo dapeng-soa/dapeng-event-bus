@@ -108,8 +108,6 @@ public class RestListenerFactory implements InitializingBean {
         factory.registerEndpoint();
 
 
-
-
     }
 
 }
