@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 描述: com.today.common
+ * 描述: 重构，所有consumer继承的父类
  *
  * @author hz.lei
  * @date 2018年05月07日 下午3:28
@@ -62,10 +62,10 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     if (records != null && logger.isDebugEnabled()) {
-                        logger.debug("[" + getClass().getSimpleName() + "] poll received: " + records.count() + " records");
+                        logger.info("[" + getClass().getSimpleName() + "] while poll received: " + records.count() + " records");
                     }
                     for (ConsumerRecord<KEY, VALUE> record : records) {
-                        logger.info("[" + getClass().getSimpleName() + "] receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
+                        logger.info("[" + getClass().getSimpleName() + "] record receive message to process, topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
                             for (ConsumerEndpoint bizConsumer : bizConsumers) {

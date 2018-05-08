@@ -3,9 +3,8 @@ package com.today.eventbus.scheduler
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
-
-import com.github.dapeng.util.SoaSystemEnvProperties
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import com.today.common.SysEnvUtil
 import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory
@@ -32,7 +31,7 @@ class MsgPublishTask(topic: String,
   private val producer = new MsgKafkaProducer(kafkaHost, tid)
   logger.warn("Kafka producer transactionId:" + tid)
 
-  val period = SoaSystemEnvProperties.SOA_EVENTBUS_PERIOD.toLong
+  val period = SysEnvUtil.SOA_EVENTBUS_PERIOD.toLong
   val initialDelay = 1000
   logger.warn("Kafka producer fetch message period :" + period)
 

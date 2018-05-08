@@ -57,14 +57,14 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[]> {
      */
     @Override
     protected void dealMessage(ConsumerEndpoint consumer, byte[] message) throws SoaException {
-        logger.info("[" + getClass().getSimpleName() + "]:process biz message groupId: {}, topic: {}", groupId, topic);
+        logger.debug("[{}]:[BEGIN] 开始处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
         String eventType;
         try {
             eventType = processor.getEventType(message);
         } catch (Exception e) {
-            logger.error("[Parse Error]: 解析消息eventType出错，忽略该消息");
+            logger.error("[" + getClass().getSimpleName() + "]<->[Parse Error]: 解析消息eventType出错，忽略该消息");
             return;
         }
 
@@ -75,24 +75,31 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[]> {
                 .count();
 
         if (count > 0) {
+            logger.info("[{}]<->[dealMessage] begin <-> method {}, groupId: {}, topic: {}, bean: {}",
+                    getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+
             byte[] eventBinary = processor.getEventBinary();
 
             try {
                 Object event = processor.decodeMessage(eventBinary, consumer.getEventSerializer());
                 consumer.getMethod().invoke(consumer.getBean(), event);
-                logger.info("invoke message end ,bean: {}, method: {}", consumer.getBean(), consumer.getMethod());
+                logger.info("[{}]<->[dealMessage] end <-> method {}, groupId: {}, topic: {}, bean: {}",
+                        getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+
             } catch (IllegalAccessException | IllegalArgumentException e) {
-                logger.error("参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
+                logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
             } catch (InvocationTargetException e) {
                 // 包装异常处理
                 throwEx(e, consumer.getMethod().getName());
             } catch (TException e) {
-                logger.error("[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
+                logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
             } catch (InstantiationException e) {
-                logger.error("[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
+                logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
             }
         } else {
-            logger.debug("方法 [ {} ] 不接收当前收到的消息类型 {} ", consumer.getMethod(), eventType);
+            logger.debug("[{}]<-> 方法 [ {} ] 不接收当前收到的消息类型 {} ", getClass().getSimpleName(), consumer.getMethod().getName(), eventType);
         }
+
+        logger.debug("[{}]:[END] 结束处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
     }
 }
