@@ -81,8 +81,8 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
         })
       })
       producer.commitTransaction()
-      logger.info(s"""MsgKafkaProducer <--> batch  send [${eventMessage.size}] message to broker successful in transaction""")
-
+      logger.info(s"bizProducer:batch send [${eventMessage.size}] message to broker successful in transaction")
+      logger.info(s"bizProducer:batch send eventType: ${eventMessage.map(msg => msg.eventType).toString()}")
     } catch {
       case e: Exception =>
         producer.abortTransaction()
