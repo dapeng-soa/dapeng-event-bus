@@ -19,22 +19,16 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-aspects" % "4.3.5.RELEASE",
   "org.apache.kafka" % "kafka-clients" % "1.0.0",
   "com.github.wangzaixiang" %% "scala-sql" % "2.0.6",
-  "com.github.dapeng" % "dapeng-utils" % "2.0.1" excludeAll (
-    ExclusionRule().withOrganization("io.netty").withName("netty-all")
-    ),
   "com.github.wangzaixiang" %% "spray-json" % "1.3.4",
   "com.google.guava" % "guava" % "16.0.1",
   "com.alibaba.otter" % "canal.protocol" % "1.0.25" excludeAll(
     ExclusionRule().withOrganization("com.alibaba.otter").withName("canal.common"),
     ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
   ),
-  "com.github.dapeng" % "dapeng-open-api" % "2.0.1",
+  "com.github.dapeng" % "dapeng-open-api" % "2.0.2-SNAPSHOT",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
   "org.simpleframework" % "simple-xml" % "2.7.1",
-  //  "com.github.rholder" % "guava-retrying" % "2.0.0"
-  // https://mvnrepository.com/artifact/org.springframework.retry/spring-retry
   "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE"
-
 )
 
 javacOptions ++= Seq("-encoding", "UTF-8")
