@@ -2,6 +2,7 @@ package com.today.eventbus.spring;
 
 import com.today.binlog.BinlogKafkaConsumer;
 import com.today.eventbus.ConsumerEndpoint;
+import com.today.eventbus.MsgKafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
