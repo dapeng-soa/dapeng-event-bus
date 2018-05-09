@@ -2,6 +2,7 @@ package com.today.common;
 
 import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -15,6 +16,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * 描述: 重构，所有consumer继承的父类
@@ -42,6 +44,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
         this.topic = topic;
         init();
     }
+
+    private ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+            new ThreadFactoryBuilder().setDaemon(true)
+                    .setNameFormat("eventbus-" + getClass().getSimpleName() + "-retry-%d")
+                    .build());
 
     /**
      * 添加相同的 group + topic  消费者

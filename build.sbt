@@ -31,8 +31,9 @@ libraryDependencies ++= Seq(
   "com.github.dapeng" % "dapeng-open-api" % "2.0.1",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
   "org.simpleframework" % "simple-xml" % "2.7.1",
-  // https://mvnrepository.com/artifact/com.github.rholder/guava-retrying
-  "com.github.rholder" % "guava-retrying" % "2.0.0"
+  //  "com.github.rholder" % "guava-retrying" % "2.0.0"
+  // https://mvnrepository.com/artifact/org.springframework.retry/spring-retry
+  "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE"
 
 )
 
