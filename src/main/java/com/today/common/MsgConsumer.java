@@ -3,6 +3,9 @@ package com.today.common;
 import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.today.common.retry.DefaultRetryStrategy;
+import com.today.common.retry.RetryMsgCallback;
+import com.today.common.retry.RetryStrategy;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -38,12 +41,17 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
 
     protected KafkaConsumer<KEY, VALUE> consumer;
 
+    protected RetryStrategy retryStrategy;
+
     public MsgConsumer(String kafkaHost, String groupId, String topic) {
         this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
         init();
+        beginRetry();
+
     }
+
 
     private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue();
 
@@ -60,6 +68,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
     public void addConsumer(ENDPOINT endpoint) {
         this.bizConsumers.add(endpoint);
 
+    }
+
+    /**
+     * 初始化 retry 策略
+     */
+    protected void beginRetry() {
+        buildRetryStrategy();
+        beginRetryMessage();
     }
 
     @Override
@@ -81,9 +97,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
+                            logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
                             retryMsgQueue.put(record);
-//                            dealRetryEx(record, e);
-//                            break;
                         }
                     }
                     try {
@@ -123,7 +138,28 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
         throw new SoaException("[订阅者处理消息失败,会重试] throws: " + target.getMessage(), methodName);
     }
 
-    private void dealRetry(ConsumerRecord<KEY, VALUE> record, Exception e) {
+    private void beginRetryMessage() {
+        executor.execute(() -> {
+            while (true) {
+                try {
+                    ConsumerRecord<KEY, VALUE> record = retryMsgQueue.take();
+                    logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", record.offset());
+
+                    for (ENDPOINT endpoint : bizConsumers) {
+                        retryStrategy.execute(() -> dealMessage(endpoint, record.value()));
+                    }
+
+                    logger.info("retry result {}", record);
+                } catch (InterruptedException e) {
+                    logger.error("InterruptedException error", e);
+                }
+            }
+        });
+    }
+
+
+    @Deprecated
+    private void dealRetryEx(ConsumerRecord<KEY, VALUE> record, Exception e) {
         long offset = record.offset();
         logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
         logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
@@ -155,6 +191,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
      * 初始化 consumer
      */
     protected abstract void init();
+
+    /**
+     * 子类选择的重试策略
+     */
+    protected abstract void buildRetryStrategy();
 
 
 }
