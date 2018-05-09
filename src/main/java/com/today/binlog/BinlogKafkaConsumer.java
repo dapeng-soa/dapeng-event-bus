@@ -2,7 +2,7 @@ package com.today.binlog;
 
 import com.github.dapeng.core.SoaException;
 import com.today.common.MsgConsumer;
-import com.today.common.retry.DefaultRetryStrategy;
+import com.today.common.retry.BinlogRetryStrategy;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -52,7 +52,7 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
     @Override
     protected void buildRetryStrategy() {
-        retryStrategy = new DefaultRetryStrategy();
+        retryStrategy = new BinlogRetryStrategy();
     }
 
 
