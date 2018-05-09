@@ -81,7 +81,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .count();
 
         if (count > 0) {
-            logger.info("[{}]<->[dealMessage] begin <-> method {}, groupId: {}, topic: {}, bean: {}",
+            logger.info("[{}]<->[开始处理消息]: method {}, groupId: {}, topic: {}, bean: {}",
                     getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
 
             byte[] eventBinary = processor.getEventBinary();
@@ -89,14 +89,14 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             try {
                 Object event = processor.decodeMessage(eventBinary, consumer.getEventSerializer());
                 consumer.getMethod().invoke(consumer.getBean(), event);
-                logger.info("[{}]<->[dealMessage] end <-> method {}, groupId: {}, topic: {}, bean: {}",
+                logger.info("[{}]<->[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
                         getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
 
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
             } catch (InvocationTargetException e) {
                 // 包装异常处理
-                throwEx(e, consumer.getMethod().getName());
+                throwRealException(e, consumer.getMethod().getName());
             } catch (TException e) {
                 logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
             } catch (InstantiationException e) {

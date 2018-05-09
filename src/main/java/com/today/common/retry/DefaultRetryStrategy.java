@@ -34,6 +34,10 @@ public class DefaultRetryStrategy extends RetryStrategy {
      * <p>
      * initialInterval 指定初始休眠时间，默认100毫秒，
      * multiplier      指定乘数，即下一次休眠时间为当前休眠时间*multiplier
+     * maxInterval      最大重试间隔为 30s
+     * <p>
+     * 目标方法处理失败，马上重试，第二次会等待 initialInterval， 第三次等待  initialInterval * multiplier
+     * 目前重试间隔 0s 4s 16s 30s
      *
      * @return
      */
@@ -41,7 +45,7 @@ public class DefaultRetryStrategy extends RetryStrategy {
     @Override
     protected BackOffPolicy createBackOffPolicy() {
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-        backOffPolicy.setInitialInterval(1000);
+        backOffPolicy.setInitialInterval(4000);
         backOffPolicy.setMultiplier(4);
         return backOffPolicy;
     }
