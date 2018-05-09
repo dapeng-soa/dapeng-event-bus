@@ -3,20 +3,12 @@ package com.today.binlog;
 import com.github.dapeng.core.SoaException;
 import com.today.common.MsgConsumer;
 import com.today.eventbus.ConsumerEndpoint;
-import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.config.KafkaConfigBuilder;
-import org.apache.kafka.clients.consumer.CommitFailedException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
