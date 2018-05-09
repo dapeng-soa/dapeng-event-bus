@@ -4,7 +4,7 @@ import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import com.today.common.SysEnvUtil
+import com.today.eventbus.common.SysEnvUtil
 import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory

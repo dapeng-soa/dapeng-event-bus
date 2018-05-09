@@ -1,10 +1,10 @@
-package com.today.common;
+package com.today.eventbus.common;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
- * 描述: com.today.common
+ * 描述: com.today.eventbus.common
  *
  * @author hz.lei
  * @date 2018年05月07日 下午4:41

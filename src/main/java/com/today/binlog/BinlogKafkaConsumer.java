@@ -1,8 +1,8 @@
 package com.today.binlog;
 
 import com.github.dapeng.core.SoaException;
-import com.today.common.MsgConsumer;
-import com.today.common.retry.BinlogRetryStrategy;
+import com.today.eventbus.common.MsgConsumer;
+import com.today.eventbus.common.retry.BinlogRetryStrategy;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

@@ -1,4 +1,4 @@
-package com.today.common.retry;
+package com.today.eventbus.common.retry;
 
 import com.github.dapeng.org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -8,8 +8,6 @@ import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-
-import java.util.concurrent.Callable;
 
 /**
  * 描述: 重试策略
