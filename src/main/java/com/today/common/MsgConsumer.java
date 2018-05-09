@@ -45,6 +45,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
         init();
     }
 
+    private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue();
+
     private ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
             new ThreadFactoryBuilder().setDaemon(true)
                     .setNameFormat("eventbus-" + getClass().getSimpleName() + "-retry-%d")
@@ -79,12 +81,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
-                            dealRetryEx(record, e);
-                            break;
+                            retryMsgQueue.put(record);
+//                            dealRetryEx(record, e);
+//                            break;
                         }
-
                     }
-
                     try {
                         consumer.commitSync();
                     } catch (CommitFailedException e) {
@@ -122,7 +123,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
         throw new SoaException("[订阅者处理消息失败,会重试] throws: " + target.getMessage(), methodName);
     }
 
-    private void dealRetryEx(ConsumerRecord<KEY, VALUE> record, Exception e) {
+    private void dealRetry(ConsumerRecord<KEY, VALUE> record, Exception e) {
         long offset = record.offset();
         logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
         logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
