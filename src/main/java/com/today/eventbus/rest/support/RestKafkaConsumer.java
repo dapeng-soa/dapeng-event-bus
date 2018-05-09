@@ -106,7 +106,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
             /**
              * 针对 2.0.1
              */
-            JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+            JsonSerializer jsonDecoder = new JsonSerializer(service, null/*, bizConsumer.getVersion()*/, MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
 
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
