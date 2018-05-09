@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "0.2-SNAPSHOT"
+version := "0.17-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
@@ -27,7 +27,11 @@ libraryDependencies ++= Seq(
   ),
   "com.github.dapeng" % "dapeng-open-api" % "2.0.2-SNAPSHOT",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
-  "org.simpleframework" % "simple-xml" % "2.7.1"
+  "org.simpleframework" % "simple-xml" % "2.7.1",
+  //  "com.github.rholder" % "guava-retrying" % "2.0.0"
+  // https://mvnrepository.com/artifact/org.springframework.retry/spring-retry
+  "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE"
+
 )
 
 javacOptions ++= Seq("-encoding", "UTF-8")
