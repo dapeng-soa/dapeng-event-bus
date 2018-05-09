@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "0.17-SNAPSHOT"
+version := "0.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
@@ -17,7 +17,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.13",
   "org.springframework" % "spring-aop" % "4.3.5.RELEASE",
   "org.springframework" % "spring-aspects" % "4.3.5.RELEASE",
-  "org.apache.kafka" % "kafka-clients" % "1.0.0",
+  "org.apache.kafka" % "kafka-clients" % "1.1.0",
   "com.github.wangzaixiang" %% "scala-sql" % "2.0.6",
   "com.github.wangzaixiang" %% "spray-json" % "1.3.4",
   "com.google.guava" % "guava" % "16.0.1",
@@ -25,7 +25,7 @@ libraryDependencies ++= Seq(
     ExclusionRule().withOrganization("com.alibaba.otter").withName("canal.common"),
     ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
   ),
-  "com.github.dapeng" % "dapeng-open-api" % "2.0.1",
+  "com.github.dapeng" % "dapeng-open-api" % "2.0.2-SNAPSHOT",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
   "org.simpleframework" % "simple-xml" % "2.7.1"
 )
