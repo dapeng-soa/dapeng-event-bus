@@ -3,6 +3,7 @@ package com.today.eventbus;
 import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.today.common.MsgConsumer;
+import com.today.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -49,6 +50,11 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .build();
 
         consumer = new KafkaConsumer<>(props);
+    }
+
+    @Override
+    protected void buildRetryStrategy() {
+        retryStrategy = new DefaultRetryStrategy();
     }
 
 

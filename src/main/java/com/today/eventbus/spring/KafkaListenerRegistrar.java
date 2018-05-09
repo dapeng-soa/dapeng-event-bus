@@ -2,6 +2,7 @@ package com.today.eventbus.spring;
 
 import com.today.binlog.BinlogKafkaConsumer;
 import com.today.eventbus.ConsumerEndpoint;
+import com.today.eventbus.MsgKafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -40,13 +41,10 @@ public class KafkaListenerRegistrar implements InitializingBean {
             // 默认 group id
             String className = endpoint.getBean().getClass().getName();
             groupId = "".equals(groupId) ? className : groupId;
-            String consumerKey = groupId + ":" +   topic;
+            String consumerKey = groupId + ":" + topic;
             //判断类型 binlog   or   event-bus ？
             if (endpoint.getBinlog()) {
                 // binlog
-               /* Optional<BinlogKafkaConsumer> consumers = Optional.ofNullable(BINLOG_CONSUMERS.get(consumerKey));
-                consumers.map*/
-
                 if (BINLOG_CONSUMERS.containsKey(consumerKey)) {
                     BINLOG_CONSUMERS.get(consumerKey).addConsumer(endpoint);
                 } else {
