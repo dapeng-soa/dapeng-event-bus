@@ -1,6 +1,6 @@
 package com.today.eventbus.config;
 
-import com.today.common.SysEnvUtil;
+import com.today.eventbus.common.SysEnvUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Deserializer;

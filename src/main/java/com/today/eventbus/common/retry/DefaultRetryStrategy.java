@@ -1,4 +1,4 @@
-package com.today.common.retry;
+package com.today.eventbus.common.retry;
 
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
@@ -8,7 +8,7 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import java.util.Collections;
 
 /**
- * 描述: com.today.common.retry
+ * 描述: com.today.eventbus.common.retry
  *
  * @author hz.lei
  * @date 2018年05月09日 下午2:41

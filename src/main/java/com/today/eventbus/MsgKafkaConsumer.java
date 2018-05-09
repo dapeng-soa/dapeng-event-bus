@@ -2,8 +2,8 @@ package com.today.eventbus;
 
 import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
-import com.today.common.MsgConsumer;
-import com.today.common.retry.DefaultRetryStrategy;
+import com.today.eventbus.common.MsgConsumer;
+import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
