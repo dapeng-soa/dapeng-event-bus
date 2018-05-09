@@ -33,7 +33,7 @@ public class KafkaMessageProcessor<T> {
 
         T event = beanSerializer.read(protocol);
 
-        logger.info("[decode] 解码消息 event: {}", event.toString());
+        logger.debug("[decode] 解码消息 event: {}", event.toString());
         return event;
     }
 

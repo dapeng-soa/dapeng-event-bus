@@ -41,13 +41,10 @@ public class KafkaListenerRegistrar implements InitializingBean {
             // 默认 group id
             String className = endpoint.getBean().getClass().getName();
             groupId = "".equals(groupId) ? className : groupId;
-            String consumerKey = groupId + ":" +   topic;
+            String consumerKey = groupId + ":" + topic;
             //判断类型 binlog   or   event-bus ？
             if (endpoint.getBinlog()) {
                 // binlog
-               /* Optional<BinlogKafkaConsumer> consumers = Optional.ofNullable(BINLOG_CONSUMERS.get(consumerKey));
-                consumers.map*/
-
                 if (BINLOG_CONSUMERS.containsKey(consumerKey)) {
                     BINLOG_CONSUMERS.get(consumerKey).addConsumer(endpoint);
                 } else {
