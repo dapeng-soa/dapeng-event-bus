@@ -127,6 +127,22 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
         throw new SoaException("[订阅者处理消息失败,会重试] throws: " + target.getMessage(), methodName);
     }
 
+    private void dealRetryEx(ConsumerRecord<KEY, VALUE> record, Exception e) {
+        long offset = record.offset();
+        logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
+        logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
+
+        int partition = record.partition();
+        String topic = record.topic();
+        TopicPartition topicPartition = new TopicPartition(topic, partition);
+
+        /**
+         * 将offset seek到当前失败的消息位置，前面已经消费的消息的偏移量相当于已经提交了
+         * 因为这里seek到偏移量是最新的报错的offset。手动管理偏移量
+         */
+        consumer.seek(topicPartition, offset);
+    }
+
 
     // template method
 
