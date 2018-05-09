@@ -1,7 +1,8 @@
 package com.today.common;
 
 import com.github.dapeng.core.SoaException;
-import com.today.eventbus.ConsumerEndpoint;
+import com.github.dapeng.org.apache.thrift.TException;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -15,6 +16,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * 描述: 重构，所有consumer继承的父类
@@ -22,11 +24,11 @@ import java.util.List;
  * @author hz.lei
  * @date 2018年05月07日 下午3:28
  */
-public abstract class MsgConsumer<KEY, VALUE> extends Thread {
+public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected List<ConsumerEndpoint> bizConsumers = new ArrayList<>();
+    protected List<ENDPOINT> bizConsumers = new ArrayList<>();
 
     protected String groupId;
 
@@ -43,12 +45,17 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
         init();
     }
 
+    private ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+            new ThreadFactoryBuilder().setDaemon(true)
+                    .setNameFormat("eventbus-" + getClass().getSimpleName() + "-retry-%d")
+                    .build());
+
     /**
      * 添加相同的 group + topic  消费者
      *
      * @param endpoint
      */
-    public void addConsumer(ConsumerEndpoint endpoint) {
+    public void addConsumer(ENDPOINT endpoint) {
         this.bizConsumers.add(endpoint);
 
     }
@@ -68,23 +75,11 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
                         logger.info("[" + getClass().getSimpleName() + "] record receive message to process, topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
-                            for (ConsumerEndpoint bizConsumer : bizConsumers) {
+                            for (ENDPOINT bizConsumer : bizConsumers) {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
-                            long offset = record.offset();
-                            logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
-                            logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
-
-                            int partition = record.partition();
-                            String topic = record.topic();
-                            TopicPartition topicPartition = new TopicPartition(topic, partition);
-
-                            /**
-                             * 将offset seek到当前失败的消息位置，前面已经消费的消息的偏移量相当于已经提交了
-                             * 因为这里seek到偏移量是最新的报错的offset。手动管理偏移量
-                             */
-                            consumer.seek(topicPartition, offset);
+                            dealRetryEx(record, e);
                             break;
                         }
 
@@ -127,6 +122,22 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
         throw new SoaException("[订阅者处理消息失败,会重试] throws: " + target.getMessage(), methodName);
     }
 
+    private void dealRetryEx(ConsumerRecord<KEY, VALUE> record, Exception e) {
+        long offset = record.offset();
+        logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
+        logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
+
+        int partition = record.partition();
+        String topic = record.topic();
+        TopicPartition topicPartition = new TopicPartition(topic, partition);
+
+        /**
+         * 将offset seek到当前失败的消息位置，前面已经消费的消息的偏移量相当于已经提交了
+         * 因为这里seek到偏移量是最新的报错的offset。手动管理偏移量
+         */
+        consumer.seek(topicPartition, offset);
+    }
+
 
     // template method
 
@@ -135,9 +146,9 @@ public abstract class MsgConsumer<KEY, VALUE> extends Thread {
      *
      * @param bizConsumer 多个业务消费者遍历执行
      * @param value
-     * @throws SoaException
+     * @throws TException SoaException 是其子类 受检异常
      */
-    protected abstract void dealMessage(ConsumerEndpoint bizConsumer, VALUE value) throws SoaException;
+    protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value) throws TException;
 
     /**
      * 初始化 consumer

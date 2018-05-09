@@ -19,7 +19,7 @@ import java.util.Properties;
  * @author hz.lei
  * @date 2018年03月02日 上午1:38
  */
-public class MsgKafkaConsumer extends MsgConsumer<Long, byte[]> {
+public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...

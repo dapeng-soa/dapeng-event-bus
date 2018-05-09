@@ -8,9 +8,10 @@ import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
 import com.github.dapeng.util.MetaDataUtil;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
-import com.today.eventbus.MsgKafkaConsumer;
+import com.today.common.MsgConsumer;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -18,19 +19,14 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.kafka.clients.consumer.CommitFailedException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -42,14 +38,8 @@ import java.util.concurrent.Executors;
  * @author hz.lei
  * @date 2018年05月02日 下午4:39
  */
-public class RestKafkaConsumer extends Thread {
+public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEndpoint> {
 
-    private static final Logger logger = LoggerFactory.getLogger(MsgKafkaConsumer.class);
-    private List<RestConsumerEndpoint> bizConsumers = new ArrayList<>();
-    private String groupId;
-    private String topic;
-    private String kafkaConnect;
-    protected KafkaConsumer<Long, byte[]> consumer;
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...
@@ -57,14 +47,12 @@ public class RestKafkaConsumer extends Thread {
      * @param topic
      */
     public RestKafkaConsumer(String kafkaHost, String groupId, String topic) {
-        this.kafkaConnect = kafkaHost;
-        this.groupId = groupId;
-        this.topic = topic;
-        this.init();
+        super(kafkaHost, groupId, topic);
     }
 
-    private void init() {
-        logger.info(new StringBuffer("[KafkaConsumer] [init] ")
+    @Override
+    protected void init() {
+        logger.info(new StringBuffer("[RestKafkaConsumer] [init] ")
                 .append("kafkaConnect(").append(kafkaConnect)
                 .append(") groupId(").append(groupId)
                 .append(") topic(").append(topic).append(")").toString());
@@ -79,67 +67,12 @@ public class RestKafkaConsumer extends Thread {
                 .withIsolation("read_committed")
                 .withSessionTimeOut("100000")
                 .build();
-
         consumer = new KafkaConsumer<>(props);
     }
 
-    /**
-     * 添加相同的 group + topic  消费者
-     *
-     * @param endpoint
-     */
-    public void addConsumer(RestConsumerEndpoint endpoint) {
-        this.bizConsumers.add(endpoint);
-
-    }
 
     @Override
-    public void run() {
-        logger.info("[KafkaConsumer][{}][run] ", this.groupId + ":" + this.topic);
-        this.consumer.subscribe(Arrays.asList(this.topic));
-        while (true) {
-            try {
-                ConsumerRecords<Long, byte[]> records = consumer.poll(100);
-                if (records != null && records.count() > 0) {
-
-                    if (records != null && logger.isDebugEnabled()) {
-                        logger.debug("Per poll received: " + records.count() + " records");
-                    }
-
-                    for (ConsumerRecord<Long, byte[]> record : records) {
-                        logger.info("receive message,ready to process, topic: {} ,partition: {} ,offset: {}",
-                                record.topic(), record.partition(), record.offset());
-                        try {
-                            for (RestConsumerEndpoint bizConsumer : bizConsumers) {
-                                dealMessage(bizConsumer, record.value());
-                            }
-                        } catch (Exception e) {
-                            logger.error(e.getMessage(), e);
-                            long offset = record.offset();
-                            logger.error("当前偏移量 {} 处理消息失败，进行重试 ", offset);
-
-                            int partition = record.partition();
-                            String topic = record.topic();
-                            TopicPartition topicPartition = new TopicPartition(topic, partition);
-
-                            consumer.seek(topicPartition, offset);
-                            break;
-                        }
-                    }
-                    try {
-                        consumer.commitSync();
-                    } catch (CommitFailedException e) {
-                        logger.error("commit failed", e);
-                    }
-                }
-
-            } catch (Exception e) {
-                logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
-            }
-        }
-    }
-
-    private void dealMessage(RestConsumerEndpoint bizConsumer, byte[] value) throws TException {
+    protected void dealMessage(RestConsumerEndpoint bizConsumer, byte[] value) throws TException {
 
         Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
@@ -153,52 +86,76 @@ public class RestKafkaConsumer extends Thread {
                 }
             }
         }
+
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
         String eventType;
         try {
             eventType = processor.getEventType(value);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            logger.error("解析消息eventType出错，忽略该消息");
+            logger.error("[RestKafkaConsumer]:解析消息eventType出错，忽略该消息");
             return;
         }
+
         /**
          * 事件类型和 传入的even最后的事件名一致才处理
          */
         if (checkEquals(eventType, bizConsumer.getEvent())) {
             byte[] eventBinary = processor.getEventBinary();
-            JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+            /**
+             * 针对 2.0.1
+             */
+            JsonSerializer jsonDecoder = new JsonSerializer(service, null/*, bizConsumer.getVersion()*/, MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
-            List<NameValuePair> pairs = combinesParams(eventType, body);
-            try {
-                CloseableHttpResponse post = post(bizConsumer.getUri(), pairs);
-                if (post.getStatusLine().getStatusCode() != 200) {
-                    //重试
-                    logger.error("httpClient error");
-                    InnerExecutor.service.execute(() -> {
-                        try {
-                            CloseableHttpResponse threadResult;
-                            do {
-                                threadResult = post(bizConsumer.getUri(), pairs);
 
-                            } while (threadResult.getStatusLine().getStatusCode() != 200);
-                        } catch (IOException e) {
-                            logger.error("[HttpClient] io 异常 " + e.getMessage(), e);
-                        }
+            List<NameValuePair> pairs = combinesParams(eventType, body);
+            CloseableHttpResponse postResult = post(bizConsumer.getUri(), pairs);
+            try {
+                if (postResult.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    String content = EntityUtils.toString(postResult.getEntity(), "UTF-8");
+                    String resp = new String(content.getBytes(), "UTF-8");
+                    logger.info("response code: " + resp);
+                } else {
+                    //重试
+                    logger.error("[RestKafkaConsumer]<->[HttpClient] 调用远程url error");
+                    InnerExecutor.service.execute(() -> {
+                        int i = 1;
+                        CloseableHttpResponse threadResult;
+                        do {
+                            logger.info("[RestKafkaConsumer]<->[HttpClient] 线程: " + Thread.currentThread().getName() + " 进行重试,重试次数：" + i);
+                            threadResult = post(bizConsumer.getUri(), pairs);
+                        } while (i++ <= 3 && threadResult.getStatusLine().getStatusCode() != 200);
                     });
                 }
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
+            } finally {
+                try {
+                    postResult.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
             }
         }
     }
 
-    public CloseableHttpResponse post(String uri, List<NameValuePair> arguments) throws IOException {
+    public CloseableHttpResponse post(String uri, List<NameValuePair> arguments) {
+        logger.info("[RestKafkaConsumer]:收到消息并代理成功,准备通过httpClient请求！");
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
-        httpPost.setEntity(new UrlEncodedFormEntity(arguments, "UTF-8"));
-        CloseableHttpResponse response = httpClient.execute(httpPost);
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(arguments, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+        }
+
+        CloseableHttpResponse response = null;
+        try {
+            response = httpClient.execute(httpPost);
+        } catch (IOException e) {
+            logger.error("[RestKafkaConsumer]<->[execute httpClient error] " + e.getMessage(), e);
+        }
         return response;
     }
 
