@@ -9,6 +9,8 @@ import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
+import java.util.concurrent.Callable;
+
 /**
  * 描述: 重试策略
  *
@@ -32,13 +34,13 @@ public abstract class RetryStrategy {
                 try {
                     callback.dealMessage();
                 } catch (TException e) {
-                    logger.error("[Retry]:重试消息失败,重试次数: {}, Cause: {}", context.getRetryCount(), e.getMessage());
+                    logger.error("[Retry]:重试消息失败,重试次数: {}, Cause: {}", context.getRetryCount() + 1, e.getMessage());
                     throw new RuntimeException(e.getMessage(), e);
                 }
-                logger.info("[Retry]:消息重试消费成功,重试次数: " + context.getRetryCount());
+                logger.info("[Retry]:消息重试消费成功,重试次数: " + (context.getRetryCount()));
                 return true;
             }, context -> {
-                logger.error("[Retry]:达到重试上限,不再进行重试,重试次数: {}", context.getRetryCount());
+                logger.error("[Retry]:达到重试上限,不再进行重试,重试次数: {}", context.getRetryCount() + 1);
                 return true;
             });
         } catch (Exception e) {
@@ -54,6 +56,8 @@ public abstract class RetryStrategy {
      * <p>
      * maxAttempts         最多重试次数
      * retryableExceptions 定义触发哪些异常进行重试
+     *
+     * @return
      */
     protected abstract RetryPolicy createRetryPolicy();
 
@@ -62,6 +66,8 @@ public abstract class RetryStrategy {
      * 指数退避策略，需设置参数sleeper、initialInterval、maxInterval和multiplier，
      * <p>
      * 子类配置指数退避策略
+     *
+     * @return
      */
     protected abstract BackOffPolicy createBackOffPolicy();
 
