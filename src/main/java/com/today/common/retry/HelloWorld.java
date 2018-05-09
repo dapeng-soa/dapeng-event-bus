@@ -1,14 +1,10 @@
 package com.today.common.retry;
 
-import com.github.rholder.retry.RetryException;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.*;
 import com.google.common.base.Predicates;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 
 /**
  * 描述: com.today.common.retry
@@ -19,7 +15,9 @@ import java.util.concurrent.ExecutionException;
 public class HelloWorld {
 
     public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         Callable<Boolean> callable = () -> {
+            Thread.sleep(1000);
             System.out.println("do job ...");
             return true;
         };
@@ -28,20 +26,18 @@ public class HelloWorld {
                 .retryIfResult(Predicates.equalTo(true))
                 .retryIfExceptionOfType(IOException.class)
                 .retryIfRuntimeException()
-                .withStopStrategy(StopStrategies.stopAfterAttempt(10))
+                .withAttemptTimeLimiter(AttemptTimeLimiters.fixedTimeLimit(2, TimeUnit.SECONDS, executorService))
+                .withStopStrategy(StopStrategies.stopAfterAttempt(5))
                 .build();
-        try {
-
-            for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
+            try {
                 retryer.call(callable);
+            } catch (RetryException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
-
-
-            retryer.call(callable);
-        } catch (RetryException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+            System.out.println("------");
         }
     }
 }

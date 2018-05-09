@@ -72,19 +72,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
-                            long offset = record.offset();
-                            logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
-                            logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
-
-                            int partition = record.partition();
-                            String topic = record.topic();
-                            TopicPartition topicPartition = new TopicPartition(topic, partition);
-
-                            /**
-                             * 将offset seek到当前失败的消息位置，前面已经消费的消息的偏移量相当于已经提交了
-                             * 因为这里seek到偏移量是最新的报错的offset。手动管理偏移量
-                             */
-                            consumer.seek(topicPartition, offset);
+                            dealRetryEx(record, e);
                             break;
                         }
 
@@ -151,7 +139,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
      *
      * @param bizConsumer 多个业务消费者遍历执行
      * @param value
-     * @throws SoaException
+     * @throws TException SoaException 是其子类 受检异常
      */
     protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value) throws TException;
 
