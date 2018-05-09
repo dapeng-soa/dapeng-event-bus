@@ -2,6 +2,7 @@ package com.today.binlog;
 
 import com.github.dapeng.core.SoaException;
 import com.today.common.MsgConsumer;
+import com.today.common.retry.BinlogRetryStrategy;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -49,6 +50,11 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
         consumer = new KafkaConsumer<>(props);
     }
 
+    @Override
+    protected void buildRetryStrategy() {
+        retryStrategy = new BinlogRetryStrategy();
+    }
+
 
     @Override
     protected void dealMessage(ConsumerEndpoint consumer, byte[] value) throws SoaException {
@@ -60,7 +66,7 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
             } catch (IllegalAccessException e) {
                 logger.error("[" + getClass().getSimpleName() + "] <-> 实例化@BinlogListener 注解的方法 出错", e);
             } catch (InvocationTargetException e) {
-                throwEx(e, consumer.getMethod().getName());
+                throwRealException(e, consumer.getMethod().getName());
             }
             logger.info("[{}]<->[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}",
                     consumer.getMethod().getName(), groupId, topic, consumer.getBean());

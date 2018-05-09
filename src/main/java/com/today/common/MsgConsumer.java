@@ -3,6 +3,9 @@ package com.today.common;
 import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.today.common.retry.DefaultRetryStrategy;
+import com.today.common.retry.RetryMsgCallback;
+import com.today.common.retry.RetryStrategy;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -38,14 +41,21 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
 
     protected KafkaConsumer<KEY, VALUE> consumer;
 
+    protected RetryStrategy retryStrategy;
+
     public MsgConsumer(String kafkaHost, String groupId, String topic) {
         this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
         init();
+        beginRetry();
+
     }
 
-    private ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+
+    private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue();
+
+    private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
             new ThreadFactoryBuilder().setDaemon(true)
                     .setNameFormat("eventbus-" + getClass().getSimpleName() + "-retry-%d")
                     .build());
@@ -60,6 +70,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
 
     }
 
+    /**
+     * 初始化 retry 策略
+     */
+    protected void beginRetry() {
+        buildRetryStrategy();
+        beginRetryMessage();
+    }
+
     @Override
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
@@ -69,22 +87,20 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     if (records != null && logger.isDebugEnabled()) {
-                        logger.info("[" + getClass().getSimpleName() + "] while poll received: " + records.count() + " records");
+                        logger.info("[" + getClass().getSimpleName() + "] while poll received : " + records.count() + " records");
                     }
                     for (ConsumerRecord<KEY, VALUE> record : records) {
-                        logger.info("[" + getClass().getSimpleName() + "] record receive message to process, topic: {} ,partition: {} ,offset: {}",
+                        logger.info("[" + getClass().getSimpleName() + "] receive message (收到消息，准备处理), topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
                             for (ENDPOINT bizConsumer : bizConsumers) {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
-                            dealRetryEx(record, e);
-                            break;
+                            logger.error("[" + getClass().getSimpleName() + "]<->[订阅消息处理失败]: " + e.getMessage(), e);
+                            retryMsgQueue.put(record);
                         }
-
                     }
-
                     try {
                         consumer.commitSync();
                     } catch (CommitFailedException e) {
@@ -107,7 +123,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
      * <p>
      * 因此,需要判断目标异常如果为UndeclaredThrowableException，需要再次 getCause 拿到原始异常
      */
-    protected void throwEx(InvocationTargetException e, String methodName) throws SoaException {
+    protected void throwRealException(InvocationTargetException e, String methodName) throws SoaException {
         Throwable target = e.getTargetException();
 
         if (target instanceof UndeclaredThrowableException) {
@@ -119,13 +135,36 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
             logger.error("[" + getClass().getSimpleName() + "]<->[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage(), target);
             return;
         }
-        throw new SoaException("[订阅者处理消息失败,会重试] throws: " + target.getMessage(), methodName);
+        throw new SoaException("deal message failed, throws: " + target.getMessage(), methodName);
     }
 
+    private void beginRetryMessage() {
+        executor.execute(() -> {
+            while (true) {
+                try {
+                    ConsumerRecord<KEY, VALUE> record = retryMsgQueue.take();
+                    logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 消息偏移量:[{}],进行重试 ", record.offset());
+
+                    for (ENDPOINT endpoint : bizConsumers) {
+                        /**
+                         * 将每一条重试逻辑放入新的线程中
+                         */
+                        executor.execute(() -> retryStrategy.execute(() -> dealMessage(endpoint, record.value())));
+                    }
+                    logger.info("retry result {} \r\n", record);
+                } catch (InterruptedException e) {
+                    logger.error("InterruptedException error", e);
+                }
+            }
+        });
+    }
+
+
+    @Deprecated
     private void dealRetryEx(ConsumerRecord<KEY, VALUE> record, Exception e) {
         long offset = record.offset();
         logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
-        logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 订阅者偏移量:[{}] 处理消息失败，进行重试 ", offset);
+        logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 消息偏移量:[{}] 处理消息失败，进行重试 ", offset);
 
         int partition = record.partition();
         String topic = record.topic();
@@ -154,6 +193,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
      * 初始化 consumer
      */
     protected abstract void init();
+
+    /**
+     * 子类选择的重试策略
+     */
+    protected abstract void buildRetryStrategy();
 
 
 }

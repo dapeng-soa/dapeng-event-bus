@@ -9,6 +9,7 @@ import com.github.dapeng.util.MetaDataUtil;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
 import com.today.common.MsgConsumer;
+import com.today.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.http.HttpStatus;
@@ -182,5 +183,10 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
 
     private static class InnerExecutor {
         private static ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    }
+
+    @Override
+    protected void buildRetryStrategy() {
+        retryStrategy = new DefaultRetryStrategy();
     }
 }
