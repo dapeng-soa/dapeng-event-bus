@@ -12,6 +12,8 @@ import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
+import com.today.eventbus.utils.CharDecodeUtil;
+import com.today.eventbus.utils.ResponseResult;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -34,7 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 描述: com.today.eventbus.rest.support
+ * 描述: kafka消息代理,将消息解码为json，并转发给目标url
  *
  * @author hz.lei
  * @date 2018年05月02日 下午4:39
@@ -74,13 +76,15 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
 
     @Override
     protected void dealMessage(RestConsumerEndpoint bizConsumer, byte[] value) throws TException {
-
         Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
-            int i = 3;
-            while (service == null && i > 0) {
+            int i = 0;
+            while (service == null && i < 3) {
                 service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
-                i--;
+                if (service != null) {
+                    break;
+                }
+                i++;
                 try {
                     Thread.sleep(i * 1000);
                 } catch (InterruptedException e) {
@@ -101,48 +105,49 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
         /**
          * 事件类型和 传入的even最后的事件名一致才处理
          */
-        if (checkEquals(eventType, bizConsumer.getEvent())) {
+        if (filterBizConsumerByEventType(eventType, bizConsumer.getEvent())) {
             byte[] eventBinary = processor.getEventBinary();
             /**
-             * 针对 2.0.1
+             * 针对 dapeng 2.0.2
              */
             JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
 
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
-
             List<NameValuePair> pairs = combinesParams(eventType, body);
-            CloseableHttpResponse postResult = post(bizConsumer.getUri(), pairs);
-            try {
-                if (postResult.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                    String content = EntityUtils.toString(postResult.getEntity(), "UTF-8");
-                    String resp = new String(content.getBytes(), "UTF-8");
-                    logger.info("response code: " + resp);
-                } else {
-                    //重试
-                    logger.error("[RestKafkaConsumer]<->[HttpClient] 调用远程url error");
-                    InnerExecutor.service.execute(() -> {
-                        int i = 1;
-                        CloseableHttpResponse threadResult;
-                        do {
-                            logger.info("[RestKafkaConsumer]<->[HttpClient] 线程: " + Thread.currentThread().getName() + " 进行重试,重试次数：" + i);
-                            threadResult = post(bizConsumer.getUri(), pairs);
-                        } while (i++ <= 3 && threadResult.getStatusLine().getStatusCode() != 200);
-                    });
-                }
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-            } finally {
-                try {
-                    postResult.close();
-                } catch (IOException e) {
-                    logger.error(e.getMessage(), e);
-                }
+            ResponseResult postResult = post(bizConsumer.getUri(), pairs);
+
+            if (postResult.getCode() == HttpStatus.SC_OK) {
+                String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
+                logger.info("[HttpClient]:response code: {}, event:{}, url:{}",
+                        response, bizConsumer.getEvent(), bizConsumer.getUri());
+            } else {
+                //重试
+                logger.error("[HttpClient]:调用远程url: {} 失败,http code: {},topic:{},event:{}",
+                        bizConsumer.getUri(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent());
+                // another thread to execute retry
+                InnerExecutor.service.execute(() -> {
+                    int i = 1;
+                    ResponseResult threadResult;
+                    do {
+                        logger.info("[HttpRetry]-{},httpclient重试，url:{},topic:{},event:{},重试次数:{}",
+                                Thread.currentThread().getName(), bizConsumer.getUri(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
+                        threadResult = post(bizConsumer.getUri(), pairs);
+
+                    } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
+                });
             }
         }
     }
 
-    public CloseableHttpResponse post(String uri, List<NameValuePair> arguments) {
+    /**
+     * httpClient to post request
+     *
+     * @param uri
+     * @param arguments
+     * @return
+     */
+    public ResponseResult post(String uri, List<NameValuePair> arguments) {
         logger.info("[RestKafkaConsumer]:收到消息并代理成功,准备通过httpClient请求！");
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
@@ -154,13 +159,42 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
         CloseableHttpResponse response = null;
         try {
             response = httpClient.execute(httpPost);
+
+            int code = response.getStatusLine().getStatusCode();
+            String content = EntityUtils.toString(response.getEntity(), "UTF-8");
+            return new ResponseResult(code, content);
         } catch (IOException e) {
             logger.error("[RestKafkaConsumer]<->[execute httpClient error] " + e.getMessage(), e);
+        } finally {
+            // close resource
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+
+            if (httpClient != null) {
+                try {
+                    httpClient.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
         }
-        return response;
+
+        return new ResponseResult(-1, "");
     }
 
 
+    /**
+     * combine request parameters
+     *
+     * @param eventType
+     * @param params
+     * @return
+     */
     public List<NameValuePair> combinesParams(String eventType, String params) {
         List<NameValuePair> pairs = new ArrayList<>(4);
         pairs.add(new BasicNameValuePair("event", eventType));
@@ -169,7 +203,15 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
         return pairs;
     }
 
-    private boolean checkEquals(String eventType, String event) {
+
+    /**
+     * filterBizConsumerByEventType current eventType is the consumer subscribe eventType
+     *
+     * @param eventType
+     * @param event
+     * @return
+     */
+    private boolean filterBizConsumerByEventType(String eventType, String event) {
         try {
             String endEventType = eventType.substring(eventType.lastIndexOf("."));
             String endEvent = event.substring(event.lastIndexOf("."));
@@ -181,10 +223,17 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
         return false;
     }
 
+    /**
+     * retry thread pool ,lazy
+     */
     private static class InnerExecutor {
-        private static ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        private static ExecutorService service = Executors.newSingleThreadExecutor();
     }
 
+
+    /**
+     * 重试策略
+     */
     @Override
     protected void buildRetryStrategy() {
         retryStrategy = new DefaultRetryStrategy();
