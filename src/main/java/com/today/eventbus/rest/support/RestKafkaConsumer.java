@@ -115,6 +115,8 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
             List<NameValuePair> pairs = combinesParams(eventType, body);
+
+            logger.info("[RestKafkaConsumer]:解析消息成功,准备 httpClient post request !");
             ResponseResult postResult = post(bizConsumer.getUri(), pairs);
 
             if (postResult.getCode() == HttpStatus.SC_OK) {
@@ -148,7 +150,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
      * @return
      */
     public ResponseResult post(String uri, List<NameValuePair> arguments) {
-        logger.info("[RestKafkaConsumer]:收到消息并代理成功,准备通过httpClient请求！");
+
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
         try {
