@@ -111,14 +111,4 @@ public class RestConsumerEndpoint {
         return kafkaHost;
     }
 
-    /*public String getKafkaHost() {
-        String kafkaHost = System.getenv(kafkaHostKey.replaceAll("\\.", "_"));
-        if (kafkaHost == null) {
-            kafkaHost = System.getProperty(kafkaHostKey);
-        }
-        if (kafkaHost == null) {
-            kafkaHost = "127.0.0.1:9092";
-        }
-        return kafkaHost;
-    }*/
 }
