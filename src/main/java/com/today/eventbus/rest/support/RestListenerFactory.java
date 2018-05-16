@@ -7,7 +7,10 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 import org.springframework.util.ResourceUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,18 +30,37 @@ public class RestListenerFactory implements InitializingBean {
     public void registerEndpoint() {
         Persister persister = new Persister();
         RestConsumerConfig config = null;
+        File file;
+        FileInputStream inputStream = null;
         try {
-            config = persister.read(RestConsumerConfig.class,
-                    ResourceUtils.getFile("classpath:rest-consumer.xml"));
-        } catch (FileNotFoundException e) {
-            logger.error("配置文件rest-consumer.xml 在classpath路径下不存在，请进行配置", e);
-            throw new RuntimeException("配置文件rest-consumer.xml 在classpath路径下不存在，请进行配置");
+            //==images==//
+            inputStream = new FileInputStream("conf/rest-consumer.xml");
+            config = persister.read(RestConsumerConfig.class, inputStream);
+        }catch (FileNotFoundException e){
+            logger.warn("read file system NotFound [conf/rest-consumer.xml],found conf file [rest-consumer.xml] on classpath");
+            try {
+                //==develop==//
+                file = ResourceUtils.getFile("classpath:rest-consumer.xml");
+                config = persister.read(RestConsumerConfig.class, file);
+            } catch (FileNotFoundException e1) {
+                throw new RuntimeException("rest-consumer.xml in classpath and conf/ NotFound, please Settings");
+            } catch (Exception e1) {
+                logger.error(e1.getMessage(), e1);
+            }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+        }finally {
+            if (null!=inputStream){
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
         }
         Assert.notNull(config, "Endpoint must be set");
 
-        transferEl(config);
+        //transferEl(config);
 
         config.getRestConsumerEndpoints().forEach(endpoint -> addConsumer(endpoint));
     }
