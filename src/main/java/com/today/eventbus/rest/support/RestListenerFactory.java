@@ -60,7 +60,7 @@ public class RestListenerFactory implements InitializingBean {
         }
         Assert.notNull(config, "Endpoint must be set");
 
-        //transferEl(config);
+        transferEl(config);
 
         config.getRestConsumerEndpoints().forEach(endpoint -> addConsumer(endpoint));
     }
@@ -95,21 +95,16 @@ public class RestListenerFactory implements InitializingBean {
 
     private void transferEl(RestConsumerConfig config) {
         config.getRestConsumerEndpoints().forEach(endpoint -> {
-            String groupIdKey = endpoint.getGroupId();
             String kafkaHostKey = endpoint.getKafkaHost();
-            String uriKey = endpoint.getUri();
 
-            String groupId = get(groupIdKey, null);
             String kafkaHost = get(kafkaHostKey, null);
-            String uri = get(uriKey, null);
-            logger.info("transfer env key, endpoint id: {}, groupId: {}, kafkaHost: {}, uri: {}", endpoint.getId(), groupId, kafkaHost, uri);
+            logger.info("transfer env key, endpoint id: {}, kafkaHost: {}", endpoint.getId(), kafkaHost);
 
-            if (groupId != null && kafkaHost != null && uri != null) {
-                endpoint.setGroupId(groupId);
+            if (kafkaHost != null) {
                 endpoint.setKafkaHost(kafkaHost);
-                endpoint.setUri(uri);
             } else {
-                throw new NullPointerException("消息代理需要的环境参数groupId,kafkaHost,uriKey不能为空");
+                logger.error("kafka msgAgent endpoint id ["+endpoint.getId()+"] need env ["+kafkaHostKey+"] but NotFound");
+                throw new NullPointerException("kafka msgAgent endpoint id ["+endpoint.getId()+"] need env ["+kafkaHostKey+"] but NotFound");
             }
         });
 
