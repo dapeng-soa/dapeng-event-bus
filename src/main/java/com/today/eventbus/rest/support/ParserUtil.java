@@ -10,11 +10,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
- * Desc: ParserUtil
+ * Desc: ParserUtil 解析 xml data
  *
  * @author hz.lei
  * @date 2018年05月17日 下午12:08
@@ -28,12 +27,27 @@ public class ParserUtil {
         return consumerConfig;
     }
 
+    /**
+     * 获取配置的consumer信息 key consumer 对应的service
+     *
+     * @return
+     */
     public static Map<String, RestConsumerEndpoint> getConsumersMap() {
         Map consumersMap = new HashMap(16);
         consumerConfig.getRestConsumerEndpoints().forEach(consumer -> consumersMap.put(consumer.getService(), consumer));
         return consumersMap;
     }
 
+    /**
+     * 获取 event service 列表，并且去重
+     *
+     * @return
+     */
+    public static Set<String> getConsumerServiceSet() {
+        Set<String> serviceList = new HashSet<>(16);
+        consumerConfig.getRestConsumerEndpoints().forEach(consumer -> serviceList.add(consumer.getService()));
+        return serviceList;
+    }
 
     private static RestConsumerConfig parserXmlData() {
         Persister persister = new Persister();
