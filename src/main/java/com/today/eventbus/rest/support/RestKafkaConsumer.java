@@ -132,10 +132,16 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
                     int i = 1;
                     ResponseResult threadResult;
                     do {
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e) {
+                            logger.error("睡眠10s,等待重试，被打断! " + e.getMessage());
+                        }
                         logger.info("[HttpRetry]-{},httpclient重试，url:{},topic:{},event:{},重试次数:{}",
                                 Thread.currentThread().getName(), bizConsumer.getUri(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
                         threadResult = post(bizConsumer.getUri(), pairs);
-
+                        logger.info("重试返回结果:response code: {}, event:{}, url:{}",
+                                threadResult.getContent(), bizConsumer.getEvent(), bizConsumer.getUri());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
                 });
             }
@@ -197,7 +203,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
      * @param params
      * @return
      */
-    public List<NameValuePair> combinesParams(String eventType, String params) {
+    private List<NameValuePair> combinesParams(String eventType, String params) {
         List<NameValuePair> pairs = new ArrayList<>(4);
         pairs.add(new BasicNameValuePair("event", eventType));
         pairs.add(new BasicNameValuePair("body", params));
