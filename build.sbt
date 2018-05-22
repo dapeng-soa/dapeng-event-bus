@@ -2,11 +2,9 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "0.1-SNAPSHOT"
+version := "0.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
-
-resolvers += Resolver.mavenLocal
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.13",
@@ -20,7 +18,7 @@ libraryDependencies ++= Seq(
     ExclusionRule().withOrganization("com.alibaba.otter").withName("canal.common"),
     ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
   ),
-  "com.github.dapeng" % "dapeng-open-api" % "2.0.1",
+  "com.github.dapeng" % "dapeng-open-api" % "2.0.2",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
   "org.simpleframework" % "simple-xml" % "2.7.1",
   "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE"
