@@ -141,7 +141,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
                                 Thread.currentThread().getName(), bizConsumer.getUri(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
                         threadResult = post(bizConsumer.getUri(), pairs);
                         logger.info("重试返回结果:response code: {}, event:{}, url:{}",
-                                threadResult.getContent(), bizConsumer.getEvent(), bizConsumer.getUri());
+                                CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getUri());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
                 });
             }
