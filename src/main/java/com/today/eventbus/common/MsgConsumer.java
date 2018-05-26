@@ -69,6 +69,15 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
     }
 
     /**
+     * 返回一个实例的bizConsumer数量
+     *
+     * @return
+     */
+    public List<ENDPOINT> getBizConsumers() {
+        return bizConsumers;
+    }
+
+    /**
      * 初始化 retry 策略
      */
     protected void beginRetry() {
