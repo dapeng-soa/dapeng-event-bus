@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<consumer-groups>
+    <consumer-group id="">
+        <group-id>12</group-id>
+        <topic>12</topic>
+        <kafka-host>12</kafka-host>
+        <service>com.today.api.member.service.MemberService</service>
+        <version>1.0.0</version>
+        <thread-count>2</thread-count>
+        <consumers>
+            <consumer>
+                <event-type>com.today.api.member.scala.events.MemberRegisterByWechatOpenIdEvent</event-type>
+                <event>com.today.api.member.events.MemberRegisterByWechatOpenIdEvent</event>
+                <destination-url>soa_destination_url</destination-url>
+            </consumer>
+        </consumers>
+    </consumer-group>
+</consumer-groups>
