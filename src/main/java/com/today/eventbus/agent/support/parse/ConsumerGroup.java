@@ -53,6 +53,10 @@ public class ConsumerGroup {
         return kafkaHost;
     }
 
+    public void setKafkaHost(String kafkaHost) {
+        this.kafkaHost = kafkaHost;
+    }
+
     public String getService() {
         return service;
     }

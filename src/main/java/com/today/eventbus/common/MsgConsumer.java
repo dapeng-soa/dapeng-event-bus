@@ -25,7 +25,7 @@ import java.util.concurrent.*;
  * @author hz.lei
  * @date 2018年05月07日 下午3:28
  */
-public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> extends Thread {
+public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 

@@ -11,6 +11,8 @@ import org.springframework.beans.factory.InitializingBean;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 描述: RestListenerFactory
@@ -27,19 +29,25 @@ public class RestListenerFactory implements InitializingBean {
     @Override
     public void afterPropertiesSet() {
         registerConsumerInstance();
-        logger.info("<<<<<<<<<<<<< [RestConsumer]:开始启动consumer，实例数为: {} >>>>>>>>>>>>>>>>", REST_CONSUMERS.size());
+        logger.info("\n<<<<<<<<<<<<< [RestConsumer]:开始启动consumer，实例数为: {} >>>>>>>>>>>>>>>> \n", REST_CONSUMERS.size());
         StringBuilder logBuffer = new StringBuilder();
-        logBuffer.append("<<<<<<<<<<<<<<<<<<<<<<-消费者组信息->>>>>>>>>>>>>>>>>>>>>>>>");
-        REST_CONSUMERS.keySet().forEach(k -> {
-            logBuffer.append("消费者组: 组名:[" + k + "]");
+        logBuffer.append("<<<<<<<<<<<<<<<<<<<<<<-消费者组信息展示开始>>>>>>>>>>>>>>>>>>>>>>>>\n");
+        REST_CONSUMERS.keySet().stream().sorted().forEach(k -> {
+
+            logBuffer.append("消费者组: 组名:[" + k.substring(0, k.indexOf("-")) + "], " +
+                    "实例名:[" + k.substring(k.indexOf("-") + 1) + "]\n");
+
             REST_CONSUMERS.get(k).getBizConsumers().forEach(biz -> {
-                logBuffer.append("bizConsumer: 事件类型:[" + biz.getEvent() + "],事件转发 url:[" + biz.getDestinationUrl() + "] \n");
+                logBuffer.append("bizConsumer: 事件类型:[" + biz.getEvent() + "], 事件转发url:[" + biz.getDestinationUrl() + "] \n");
             });
             logBuffer.append("\n");
         });
+        logBuffer.append("<<<<<<<<<<<<<<<<<<<<<<-消费者组信息展示完毕->>>>>>>>>>>>>>>>>>>>>>>>\n");
         logger.info(logBuffer.toString());
         //启动实例
-        REST_CONSUMERS.values().forEach(Thread::start);
+        ExecutorService executorService = Executors.newFixedThreadPool(REST_CONSUMERS.size());
+
+        REST_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
     }
 
     /**
