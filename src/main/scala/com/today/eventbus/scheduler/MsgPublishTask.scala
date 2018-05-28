@@ -3,6 +3,8 @@ package com.today.eventbus.scheduler
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
+
+import com.github.dapeng.core.helper.MasterHelper
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.today.eventbus.common.SysEnvUtil
 import javax.sql.DataSource
@@ -10,6 +12,8 @@ import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory
 import com.today.eventbus.scheduler.ScalaSql._
 import wangzx.scala_commons.sql._
+
+import scala.beans.BeanProperty
 
 /**
   *
@@ -36,7 +40,20 @@ class MsgPublishTask(topic: String,
   logger.warn("Kafka producer fetch message period :" + period)
 
   val logCount = new AtomicInteger(0)
+  //每轮询100次，log一次日志
+  val logWhileLoop = 100
 
+  val scheduledCount = new AtomicInteger(0)
+  val scheduledLoop = 500
+
+
+  //----------------------------- master模式，只有master进行轮询 ---------
+  @BeanProperty
+  var serviceName = null
+
+  @BeanProperty
+  var versionName = "1.0.0"
+  //--------------------------------------------------------------------
 
   /**
     * 基于jdk定时线程池,处理消息轮询发送.... 批量
@@ -48,15 +65,40 @@ class MsgPublishTask(topic: String,
         .setDaemon(true)
         .setNameFormat("dapeng-eventbus--scheduler-%d")
         .build)
-    schedulerPublisher.scheduleAtFixedRate(() => {
-      try {
-        doPublishMessagesAsync()
-      } catch {
-        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
-      }
-    }, initialDelay, period, TimeUnit.MILLISECONDS)
+
+    if (serviceName == null) {
+      schedulerPublisher.scheduleAtFixedRate(() => {
+        try {
+          doPublishMessagesAsync()
+        } catch {
+          case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+        }
+      }, initialDelay, period, TimeUnit.MILLISECONDS)
+
+    } else {
+      schedulerPublisher.scheduleAtFixedRate(() => {
+        // log日志多久打印一次
+        val logPeriod = scheduledCount.incrementAndGet()
+
+        if (logPeriod == scheduledLoop) {
+          logger.info(s"定时线程 logger 间隔: [${logPeriod}],publishTask节点是否为master:[${MasterHelper.isMaster(serviceName, versionName)}]")
+          scheduledCount.set(0)
+        }
+
+        //判断为master才执行
+        if (MasterHelper.isMaster(serviceName, versionName)) {
+          try {
+            doPublishMessagesAsync()
+          } catch {
+            case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+          }
+        }
+      }, initialDelay, period, TimeUnit.MILLISECONDS)
+
+    }
 
   }
+
 
   /**
     * 基于jdk定时线程池,处理消息轮询发送....
@@ -86,7 +128,7 @@ class MsgPublishTask(topic: String,
     // log日志多久打印一次
     val logPeriod = logCount.incrementAndGet()
 
-    if (logPeriod == 50) {
+    if (logPeriod == logWhileLoop) {
       logger.info(s"[scheduled logger 间隔: ${logPeriod}]::begin to publish messages to kafka")
     }
 
@@ -98,17 +140,13 @@ class MsgPublishTask(topic: String,
     val resultSetCounter = new AtomicInteger(window)
 
 
-    /**
-      * id: 作用是不锁住全表，获取消息时不会影响插入
-      *
-      * uniqueId:
-      */
+    //id: 作用是不锁住全表，获取消息时不会影响插入 uniqueId
     do {
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
         val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
 
-        if (logPeriod == 50) {
+        if (logPeriod == logWhileLoop) {
           logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: 获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
         }
 
@@ -134,7 +172,7 @@ class MsgPublishTask(topic: String,
       logger.info(s"end publish messages(${counter.get()}) to kafka")
     }
 
-    if (logPeriod == 50) {
+    if (logPeriod == logWhileLoop) {
       logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: MsgPublishTask 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
@@ -147,7 +185,7 @@ class MsgPublishTask(topic: String,
     */
   def doPublishMessagesSync(): Unit = {
     val logPeriod = logCount.incrementAndGet()
-    if (logPeriod == 50) {
+    if (logPeriod == logWhileLoop) {
       logger.info(s"[scheduled logger 间隔: ${logPeriod}]::begin to publish messages to kafka")
     }
 
@@ -167,7 +205,7 @@ class MsgPublishTask(topic: String,
       resultSetCounter.set(0)
       withTransaction(dataSource)(conn => {
         val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
-        if (logPeriod == 20) {
+        if (logPeriod == logWhileLoop) {
           logger.info(s"[scheduled logger 间隔: ${logPeriod}]::获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
         }
 
@@ -195,7 +233,7 @@ class MsgPublishTask(topic: String,
       logger.info(s"end publish messages(${counter.get()}) to kafka")
     }
 
-    if (logPeriod == 20) {
+    if (logPeriod == logWhileLoop) {
       logger.info(s"[scheduled logger 间隔: ${logPeriod}]::[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
