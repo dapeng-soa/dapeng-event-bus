@@ -81,24 +81,27 @@ public class ParserUtil {
             }
         }
         Assert.notNull(config, "Endpoint must be set");
+        //转换消息
+        transferEl(config);
         logger.info("解析xml信息: " + config.toString());
         return config;
     }
 
     private static void transferEl(AgentConsumerXml config) {
-        /*config.getRestConsumerEndpoints().forEach(endpoint -> {
-            String kafkaHostKey = endpoint.getKafkaHost();
+        config.getConsumerGroups().forEach(group -> {
+            String kafkaHostKey = group.getKafkaHost();
 
             String kafkaHost = get(kafkaHostKey, null);
-            logger.info("transfer env key, endpoint id: {}, kafkaHost: {}", endpoint.getId(), kafkaHost);
+            logger.info("transfer env key, endpoint id: {}, kafkaHost: {}", group.getId(), kafkaHost);
 
             if (kafkaHost != null) {
-                endpoint.setKafkaHost(kafkaHost);
+                group.setKafkaHost(kafkaHost);
+                logger.info("转换kafka环境变量key {} ,转换后值: {}", kafkaHostKey, kafkaHost);
             } else {
-                logger.error("kafka msgAgent endpoint id [" + endpoint.getId() + "] need env [" + kafkaHostKey + "] but NotFound");
-                throw new NullPointerException("kafka msgAgent endpoint id [" + endpoint.getId() + "] need env [" + kafkaHostKey + "] but NotFound");
+                logger.error("kafka 消息代理 消费者组 id [" + group.getId() + "] 需要环境变量 env [" + kafkaHostKey + "] but NotFound");
+                throw new NullPointerException("kafka msgAgent endpoint id [" + group.getId() + "] need env [" + kafkaHostKey + "] but NotFound");
             }
-        });*/
+        });
 
     }
 
