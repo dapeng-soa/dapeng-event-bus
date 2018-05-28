@@ -9,7 +9,7 @@ import java.util.List;
  * 描述: kafka消息代理 配置 根目录
  *
  * @author hz.lei
- * @date 2018年05月03日 上午12:45
+ * @since 2018年05月03日 上午12:45
  */
 @Root(name = "consumer-groups")
 public class AgentConsumerXml {

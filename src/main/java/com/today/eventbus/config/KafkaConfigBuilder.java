@@ -17,7 +17,7 @@ import java.util.UUID;
  * 描述: kafka producer和consumer properties 默认配置
  *
  * @author hz.lei
- * @date 2018年02月26日 下午2:45
+ * @since 2018年02月26日 下午2:45
  */
 public abstract class KafkaConfigBuilder {
 

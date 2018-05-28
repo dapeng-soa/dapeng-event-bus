@@ -13,7 +13,7 @@ import org.springframework.retry.support.RetryTemplate;
  * 描述: 重试策略
  *
  * @author hz.lei
- * @date 2018年05月09日 上午11:22
+ * @since 2018年05月09日 上午11:22
  */
 public abstract class RetryStrategy {
 

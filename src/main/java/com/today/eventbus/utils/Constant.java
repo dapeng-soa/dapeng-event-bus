@@ -4,7 +4,7 @@ package com.today.eventbus.utils;
  * 描述:
  *
  * @author hz.lei
- * @date 2018年03月04日 下午9:13
+ * @since 2018年03月04日 下午9:13
  */
 public interface Constant {
 

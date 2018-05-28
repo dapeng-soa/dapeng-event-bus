@@ -7,7 +7,7 @@ import java.net.UnknownHostException;
  * 描述: com.today.eventbus.common
  *
  * @author hz.lei
- * @date 2018年05月07日 下午4:41
+ * @since 2018年05月07日 下午4:41
  */
 public class SysEnvUtil {
 

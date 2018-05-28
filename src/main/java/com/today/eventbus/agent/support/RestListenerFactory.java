@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
  * 描述: RestListenerFactory
  *
  * @author hz.lei
- * @date 2018年03月02日 上午1:29
+ * @since 2018年03月02日 上午1:29
  */
 public class RestListenerFactory implements InitializingBean {
     private static final Logger logger = LoggerFactory.getLogger(RestListenerFactory.class);

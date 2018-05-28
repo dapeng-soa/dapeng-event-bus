@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
   * @param before    变动前的值
   * @param after     变动后的值
   * @author hz.lei
-  * @date 2018年03月08日 上午12:42
+  * @since 2018年03月08日 上午12:42
   */
 case class BinlogEvent(schema: String, tblName: String, eventType: EventType,
                        timestamp: Long, before: JsValue, after: JsValue)

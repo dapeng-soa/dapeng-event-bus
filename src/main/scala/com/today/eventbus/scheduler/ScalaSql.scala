@@ -13,7 +13,7 @@ import scala.collection.mutable.ListBuffer
   * 描述:
   *
   * @author hz.lei
-  * @date 2018年04月08日 下午4:52
+  * @since 2018年04月08日 下午4:52
   */
 object ScalaSql {
 
