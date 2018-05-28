@@ -14,7 +14,7 @@ import wangzx.scala_commons.sql._
   * 描述: 消息总线 基类
   *
   * @author hz.lei
-  * @date 2018年02月28日 下午2:46
+  * @since 2018年02月28日 下午2:46
   */
 trait AbstractEventBus {
 

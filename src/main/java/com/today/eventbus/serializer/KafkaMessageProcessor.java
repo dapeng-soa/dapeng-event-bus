@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * 描述: kafka 消息 编解码器
  *
  * @author maple.lei
- * @date 2018年02月13日 上午11:39
+ * @since 2018年02月13日 上午11:39
  */
 public class KafkaMessageProcessor<T> {
 

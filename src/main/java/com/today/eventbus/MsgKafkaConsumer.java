@@ -18,7 +18,7 @@ import java.util.Properties;
  * 描述: msg 消息 kafkaConsumer
  *
  * @author hz.lei
- * @date 2018年03月02日 上午1:38
+ * @since 2018年03月02日 上午1:38
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
 

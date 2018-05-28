@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
  * 描述: kafka消息代理,将消息解码为json，并转发给目标url
  *
  * @author hz.lei
- * @date 2018年05月02日 下午4:39
+ * @since 2018年05月02日 下午4:39
  */
 public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 

@@ -16,7 +16,7 @@ import java.util.*;
  * Desc: ParserUtil 解析 xml data
  *
  * @author hz.lei
- * @date 2018年05月17日 下午12:08
+ * @since 2018年05月17日 下午12:08
  */
 public class ParserUtil {
     private static Logger logger = LoggerFactory.getLogger(ParserUtil.class);

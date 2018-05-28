@@ -7,7 +7,7 @@ import java.util
   * 描述:
   *
   * @author hz.lei
-  * @date 2018年03月08日 上午1:00
+  * @since 2018年03月08日 上午1:00
   */
 object BinlogMsgProcessor {
 

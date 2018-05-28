@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  * 描述: 加在类注解上,说明它是一个kafka 消息 消费者
  *
  * @author hz.lei
- * @date 2018年03月05日 下午4:03
+ * @since 2018年03月05日 下午4:03
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

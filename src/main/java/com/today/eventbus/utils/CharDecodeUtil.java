@@ -4,7 +4,7 @@ package com.today.eventbus.utils;
  * 描述: 字符解码
  *
  * @author hz.lei
- * @date 2018年05月12日 上午11:17
+ * @since 2018年05月12日 上午11:17
  */
 public class CharDecodeUtil {
 

@@ -17,7 +17,7 @@ import wangzx.scala_commons.sql._
   *
   * @param kafkaHost kafka cluster:127.0.0.1:9091,127.0.0.1:9092
   * @author hz.lei
-  *         date 2018年02月28日 下午3:00
+  * @since 2018年02月28日 下午3:00
   */
 class MsgPublishTask(topic: String,
                      kafkaHost: String,

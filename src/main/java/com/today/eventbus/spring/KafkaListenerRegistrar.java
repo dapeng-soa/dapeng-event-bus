@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
  * 描述:
  *
  * @author hz.lei
- * @date 2018年03月02日 上午1:29
+ * @since 2018年03月02日 上午1:29
  */
 public class KafkaListenerRegistrar implements InitializingBean {
 

@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 描述: 提供给第三方应用，进行序列化器的注册，以及消息的解码
  *
  * @author hz.lei
- * @date 2018年03月03日 下午3:56
+ * @since 2018年03月03日 下午3:56
  */
 public class MsgDecoder {
 

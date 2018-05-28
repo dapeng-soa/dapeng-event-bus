@@ -4,7 +4,7 @@ package com.today.eventbus.utils;
  * 描述: 封装 httpClient 返回结果
  *
  * @author hz.lei
- * @date 2018年05月12日 下午12:15
+ * @since 2018年05月12日 下午12:15
  */
 public class ResponseResult {
 

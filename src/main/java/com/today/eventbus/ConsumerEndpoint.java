@@ -10,7 +10,7 @@ import java.util.List;
  * 描述: 业务关心 consumer 上下文
  *
  * @author hz.lei
- * @date 2018年03月02日 上午1:18
+ * @since 2018年03月02日 上午1:18
  */
 public class ConsumerEndpoint {
     private String id;

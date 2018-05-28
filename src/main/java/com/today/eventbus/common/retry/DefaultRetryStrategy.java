@@ -11,7 +11,7 @@ import java.util.Collections;
  * 描述: com.today.eventbus.common.retry
  *
  * @author hz.lei
- * @date 2018年05月09日 下午2:41
+ * @since 2018年05月09日 下午2:41
  */
 public class DefaultRetryStrategy extends RetryStrategy {
 

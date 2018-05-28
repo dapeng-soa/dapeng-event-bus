@@ -23,7 +23,7 @@ import java.util.concurrent.*;
  * 描述: 重构，所有consumer继承的父类
  *
  * @author hz.lei
- * @date 2018年05月07日 下午3:28
+ * @since 2018年05月07日 下午3:28
  */
 public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
