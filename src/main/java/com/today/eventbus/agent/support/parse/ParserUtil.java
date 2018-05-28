@@ -1,4 +1,4 @@
-package com.today.eventbus.rest.support;
+package com.today.eventbus.agent.support.parse;
 
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
@@ -21,9 +21,9 @@ import java.util.*;
 public class ParserUtil {
     private static Logger logger = LoggerFactory.getLogger(ParserUtil.class);
 
-    private static RestConsumerConfig consumerConfig = parserXmlData();
+    private static AgentConsumerXml consumerConfig = parserXmlData();
 
-    public static RestConsumerConfig getConsumerConfig() {
+    public static AgentConsumerXml getConsumerConfig() {
         return consumerConfig;
     }
 
@@ -32,9 +32,9 @@ public class ParserUtil {
      *
      * @return
      */
-    public static Map<String, RestConsumerEndpoint> getConsumersMap() {
-        Map consumersMap = new HashMap(16);
-        consumerConfig.getRestConsumerEndpoints().forEach(consumer -> consumersMap.put(consumer.getService(), consumer));
+    public static Map<String, ConsumerGroup> getConsumersMap() {
+        Map<String, ConsumerGroup> consumersMap = new HashMap(16);
+        consumerConfig.getConsumerGroups().forEach(consumer -> consumersMap.put(consumer.getService(), consumer));
         return consumersMap;
     }
 
@@ -45,25 +45,25 @@ public class ParserUtil {
      */
     public static Set<String> getConsumerServiceSet() {
         Set<String> serviceList = new HashSet<>(16);
-        consumerConfig.getRestConsumerEndpoints().forEach(consumer -> serviceList.add(consumer.getService()));
+        consumerConfig.getConsumerGroups().forEach(consumer -> serviceList.add(consumer.getService()));
         return serviceList;
     }
 
-    private static RestConsumerConfig parserXmlData() {
+    private static AgentConsumerXml parserXmlData() {
         Persister persister = new Persister();
-        RestConsumerConfig config = null;
+        AgentConsumerXml config = null;
         File file;
         FileInputStream inputStream = null;
         try {
             //==images==//
             inputStream = new FileInputStream("conf/rest-consumer.xml");
-            config = persister.read(RestConsumerConfig.class, inputStream);
+            config = persister.read(AgentConsumerXml.class, inputStream);
         } catch (FileNotFoundException e) {
             logger.warn("read file system NotFound [conf/rest-consumer.xml],found conf file [rest-consumer.xml] on classpath");
             try {
                 //==develop==//
                 file = ResourceUtils.getFile("classpath:rest-consumer.xml");
-                config = persister.read(RestConsumerConfig.class, file);
+                config = persister.read(AgentConsumerXml.class, file);
             } catch (FileNotFoundException e1) {
                 throw new RuntimeException("rest-consumer.xml in classpath and conf/ NotFound, please Settings");
             } catch (Exception e1) {
@@ -81,27 +81,27 @@ public class ParserUtil {
             }
         }
         Assert.notNull(config, "Endpoint must be set");
-
+        //转换消息
         transferEl(config);
-
+        logger.info("解析xml信息: " + config.toString());
         return config;
     }
 
-    private static void transferEl(RestConsumerConfig config) {
-        config.getRestConsumerEndpoints().forEach(endpoint -> {
-            String kafkaHostKey = endpoint.getKafkaHost();
+    private static void transferEl(AgentConsumerXml config) {
+        config.getConsumerGroups().forEach(group -> {
+            String kafkaHostKey = group.getKafkaHost();
 
             String kafkaHost = get(kafkaHostKey, null);
-            logger.info("transfer env key, endpoint id: {}, kafkaHost: {}", endpoint.getId(), kafkaHost);
+            logger.info("transfer env key, endpoint id: {}, kafkaHost: {}", group.getId(), kafkaHost);
 
             if (kafkaHost != null) {
-                endpoint.setKafkaHost(kafkaHost);
+                group.setKafkaHost(kafkaHost);
+                logger.info("转换kafka环境变量key {} ,转换后值: {}", kafkaHostKey, kafkaHost);
             } else {
-                logger.error("kafka msgAgent endpoint id [" + endpoint.getId() + "] need env [" + kafkaHostKey + "] but NotFound");
-                throw new NullPointerException("kafka msgAgent endpoint id [" + endpoint.getId() + "] need env [" + kafkaHostKey + "] but NotFound");
+                logger.error("kafka 消息代理 消费者组 id [" + group.getId() + "] 需要环境变量 env [" + kafkaHostKey + "] but NotFound");
+                throw new NullPointerException("kafka msgAgent endpoint id [" + group.getId() + "] need env [" + kafkaHostKey + "] but NotFound");
             }
         });
-
 
     }
 

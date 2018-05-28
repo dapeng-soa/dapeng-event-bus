@@ -1,4 +1,4 @@
-package com.today.eventbus.rest.support;
+package com.today.eventbus.agent.support;
 
 import com.github.dapeng.core.metadata.Service;
 import com.github.dapeng.json.JsonSerializer;
@@ -8,6 +8,7 @@ import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
 import com.github.dapeng.util.MetaDataUtil;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
+import com.today.eventbus.agent.support.parse.BizConsumer;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
@@ -41,16 +42,22 @@ import java.util.concurrent.Executors;
  * @author hz.lei
  * @date 2018年05月02日 下午4:39
  */
-public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEndpoint> {
+public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
+    private String instName;
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...
      * @param groupId
      * @param topic
      */
-    public RestKafkaConsumer(String kafkaHost, String groupId, String topic) {
+    public RestKafkaConsumer(String instName, String kafkaHost, String groupId, String topic) {
         super(kafkaHost, groupId, topic);
+        this.instName = instName;
+    }
+
+    public String getInstName() {
+        return instName;
     }
 
     @Override
@@ -75,7 +82,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
 
 
     @Override
-    protected void dealMessage(RestConsumerEndpoint bizConsumer, byte[] value) throws TException {
+    protected void dealMessage(BizConsumer bizConsumer, byte[] value) throws TException {
         Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
             int i = 0;
@@ -117,16 +124,16 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
             List<NameValuePair> pairs = combinesParams(eventType, body);
 
             logger.info("[RestKafkaConsumer]:解析消息成功,准备 httpClient post request !");
-            ResponseResult postResult = post(bizConsumer.getUri(), pairs);
+            ResponseResult postResult = post(bizConsumer.getDestinationUrl(), pairs);
 
             if (postResult.getCode() == HttpStatus.SC_OK) {
                 String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
                 logger.info("[HttpClient]:response code: {}, event:{}, url:{}",
-                        response, bizConsumer.getEvent(), bizConsumer.getUri());
+                        response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
             } else {
                 //重试
                 logger.error("[HttpClient]:调用远程url: {} 失败,http code: {},topic:{},event:{}",
-                        bizConsumer.getUri(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent());
+                        bizConsumer.getDestinationUrl(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent());
                 // another thread to execute retry
                 InnerExecutor.service.execute(() -> {
                     int i = 1;
@@ -138,10 +145,10 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], RestConsumerEnd
                             logger.error("睡眠10s,等待重试，被打断! " + e.getMessage());
                         }
                         logger.info("[HttpRetry]-{},httpclient重试，url:{},topic:{},event:{},重试次数:{}",
-                                Thread.currentThread().getName(), bizConsumer.getUri(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
-                        threadResult = post(bizConsumer.getUri(), pairs);
+                                Thread.currentThread().getName(), bizConsumer.getDestinationUrl(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
+                        threadResult = post(bizConsumer.getDestinationUrl(), pairs);
                         logger.info("重试返回结果:response code: {}, event:{}, url:{}",
-                                CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getUri());
+                                CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
                 });
             }

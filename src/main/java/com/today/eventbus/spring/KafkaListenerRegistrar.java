@@ -9,6 +9,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 描述:
@@ -72,8 +74,10 @@ public class KafkaListenerRegistrar implements InitializingBean {
     public void afterPropertiesSet() {
         logger.info("ready to start consumer ,event consumer size {}, binlog consumer size {}", EVENT_CONSUMERS.size(), BINLOG_CONSUMERS.size());
 
-        EVENT_CONSUMERS.values().forEach(Thread::start);
+        //启动实例
+        ExecutorService executorService = Executors.newFixedThreadPool(EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size());
 
-        BINLOG_CONSUMERS.values().forEach(Thread::start);
+        EVENT_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
+        BINLOG_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
     }
 }
