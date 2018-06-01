@@ -47,6 +47,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
                 .withSessionTimeOut("100000")
+                .excludeInternalTopic("false")
                 .build();
 
         consumer = new KafkaConsumer<>(props);

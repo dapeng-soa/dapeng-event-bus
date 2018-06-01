@@ -76,6 +76,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
                 .withSessionTimeOut("100000")
+                .excludeInternalTopic("false")
                 .build();
         consumer = new KafkaConsumer<>(props);
     }
