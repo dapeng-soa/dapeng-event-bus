@@ -135,6 +135,11 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
+        public ConsumerConfiguration excludeInternalTopic(String isExcluedTopics) {
+            properties.put(ConsumerConfig.EXCLUDE_INTERNAL_TOPICS_CONFIG, isExcluedTopics);
+            return this;
+        }
+
 
         @Override
         void validate() {

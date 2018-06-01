@@ -45,6 +45,7 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
                 .withKeyDeserializer(IntegerDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
+                .excludeInternalTopic("false")
                 .build();
 
         consumer = new KafkaConsumer<>(props);
