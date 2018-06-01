@@ -6,6 +6,8 @@ version := "0.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
+resolvers += Resolver.mavenLocal
+
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.13",
   "org.springframework" % "spring-aop" % "4.3.5.RELEASE",
