@@ -49,7 +49,7 @@ class MsgPublishTask(topic: String,
 
   //----------------------------- master模式，只有master进行轮询 ---------
   @BeanProperty
-  var serviceName = null
+  var serviceName: String = null
 
   @BeanProperty
   var versionName = "1.0.0"
