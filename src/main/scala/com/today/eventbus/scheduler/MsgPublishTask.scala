@@ -129,7 +129,7 @@ class MsgPublishTask(topic: String,
     val logPeriod = logCount.incrementAndGet()
 
     if (logPeriod == logWhileLoop) {
-      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::begin to publish messages to kafka")
+      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::开始轮询数据库消息....")
     }
 
     // 消息总条数计数器
@@ -147,7 +147,7 @@ class MsgPublishTask(topic: String,
         val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
 
         if (logPeriod == logWhileLoop) {
-          logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: 获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
+          logger.info(s"[scheduled logger 间隔: ${logPeriod}]::获得dp_event_lock锁:${lockRow},开始查询消息表dp_common_event")
         }
 
         val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
@@ -173,7 +173,7 @@ class MsgPublishTask(topic: String,
     }
 
     if (logPeriod == logWhileLoop) {
-      logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: MsgPublishTask 结束一轮轮询，将计数器置为 0 ")
+//      logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: MsgPublishTask 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
 
@@ -234,7 +234,7 @@ class MsgPublishTask(topic: String,
     }
 
     if (logPeriod == logWhileLoop) {
-      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
+//      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
   }
