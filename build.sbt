@@ -6,7 +6,14 @@ version := "0.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
-resolvers += Resolver.mavenLocal
+//resolvers += Resolver.mavenLocal
+
+resolvers ++= List("today nexus" at "http://nexus.today36524.td/repository/maven-public/")
+
+publishTo := Some("today-snapshots" at "http://nexus.today36524.td/repository/maven-snapshots/")
+
+credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.today36524.td", "central-services", "E@Z.nrW3")
+
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.13",

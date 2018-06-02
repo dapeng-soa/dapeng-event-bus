@@ -45,9 +45,10 @@ public class RestListenerFactory implements InitializingBean {
         logBuffer.append("<<<<<<<<<<<<<<<<<<<<<<-消费者组信息展示完毕->>>>>>>>>>>>>>>>>>>>>>>>\n");
         logger.info(logBuffer.toString());
         //启动实例
-        ExecutorService executorService = Executors.newFixedThreadPool(REST_CONSUMERS.size());
-
-        REST_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
+        if (REST_CONSUMERS.size() != 0) {
+            ExecutorService executorService = Executors.newFixedThreadPool(REST_CONSUMERS.size());
+            REST_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
+        }
     }
 
     /**
