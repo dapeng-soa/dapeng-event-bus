@@ -73,11 +73,11 @@ public class KafkaListenerRegistrar implements InitializingBean {
     @Override
     public void afterPropertiesSet() {
         logger.info("ready to start consumer ,event consumer size {}, binlog consumer size {}", EVENT_CONSUMERS.size(), BINLOG_CONSUMERS.size());
-
-        //启动实例
-        ExecutorService executorService = Executors.newFixedThreadPool(EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size());
-
-        EVENT_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
-        BINLOG_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
+        if ((EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size()) != 0) {
+            //启动实例
+            ExecutorService executorService = Executors.newFixedThreadPool(EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size());
+            EVENT_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
+            BINLOG_CONSUMERS.values().forEach(consumer -> executorService.execute(consumer));
+        }
     }
 }
