@@ -11,6 +11,7 @@ import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory
 import com.today.eventbus.scheduler.ScalaSql._
+import org.springframework.beans.factory.DisposableBean
 import wangzx.scala_commons.sql._
 
 import scala.beans.BeanProperty
@@ -26,7 +27,7 @@ import scala.beans.BeanProperty
 class MsgPublishTask(topic: String,
                      kafkaHost: String,
                      tidPrefix: String,
-                     dataSource: DataSource) {
+                     dataSource: DataSource) extends DisposableBean {
 
   private val logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
 
@@ -53,19 +54,22 @@ class MsgPublishTask(topic: String,
 
   @BeanProperty
   var versionName = "1.0.0"
-  //--------------------------------------------------------------------
+
+  /**
+    * 构建定时线程池
+    */
+  private val schedulerPublisher = Executors.newScheduledThreadPool(1,
+    new ThreadFactoryBuilder()
+      .setDaemon(true)
+      .setNameFormat("dapeng-eventbus--scheduler-%d")
+      .build)
+
 
   /**
     * 基于jdk定时线程池,处理消息轮询发送.... 批量
     * 默认 使用 异步 发送消息模式
     */
   def startScheduled(): Unit = {
-    val schedulerPublisher = Executors.newScheduledThreadPool(1,
-      new ThreadFactoryBuilder()
-        .setDaemon(true)
-        .setNameFormat("dapeng-eventbus--scheduler-%d")
-        .build)
-
     if (serviceName == null) {
       schedulerPublisher.scheduleAtFixedRate(() => {
         try {
@@ -99,16 +103,10 @@ class MsgPublishTask(topic: String,
 
   }
 
-
   /**
     * 基于jdk定时线程池,处理消息轮询发送....
     */
   def startScheduledSync(): Unit = {
-    val schedulerPublisher = Executors.newScheduledThreadPool(1,
-      new ThreadFactoryBuilder()
-        .setDaemon(true)
-        .setNameFormat("dapeng-eventbus--scheduler-%d")
-        .build)
     schedulerPublisher.scheduleAtFixedRate(() => {
       try {
         doPublishMessagesSync()
@@ -173,7 +171,7 @@ class MsgPublishTask(topic: String,
     }
 
     if (logPeriod == logWhileLoop) {
-//      logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: MsgPublishTask 结束一轮轮询，将计数器置为 0 ")
+      //      logger.info(s"[scheduled logger 间隔: ${logPeriod}]:: MsgPublishTask 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
 
@@ -234,11 +232,16 @@ class MsgPublishTask(topic: String,
     }
 
     if (logPeriod == logWhileLoop) {
-//      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
+      //      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
   }
 
+  override def destroy(): Unit = {
+    logger.info("<<<<<< Spring容器销毁定时器 schedulerPublisher shutdown >>>>> ")
+//    logger.warn("<<<<<< Spring容器销毁定时器 schedulerPublisher shutdown >>>>> ")
+    schedulerPublisher.shutdown()
+  }
 }
 
 

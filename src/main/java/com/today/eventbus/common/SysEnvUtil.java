@@ -22,7 +22,7 @@ public class SysEnvUtil {
     private static final String KEY_SOA_CONTAINER_IP = "soa_container_ip";
 
 
-    public static final String SOA_EVENTBUS_PERIOD = get(KEY_SOA_EVENTBUS_PERIOD, "500");
+    public static final String SOA_EVENTBUS_PERIOD = get(KEY_SOA_EVENTBUS_PERIOD, "300");
 
     public static final String SOA_CONTAINER_IP = get(KEY_SOA_CONTAINER_IP, localIp());
 
