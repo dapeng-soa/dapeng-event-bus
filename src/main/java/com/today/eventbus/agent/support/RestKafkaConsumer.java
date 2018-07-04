@@ -86,6 +86,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
     protected void dealMessage(BizConsumer bizConsumer, byte[] value) throws TException {
         Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
+            logger.warn("元数据信息service为空，未能获取到元数据!!!");
             int i = 0;
             while (service == null && i < 3) {
                 service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
@@ -99,6 +100,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 }
             }
         }
+
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
         String eventType;
