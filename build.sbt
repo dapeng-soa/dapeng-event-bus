@@ -10,7 +10,7 @@ scalaVersion := "2.12.4"
 
 resolvers ++= List("today nexus" at "http://nexus.today36524.td/repository/maven-public/")
 
-publishTo := Some("today-snapshots" at "http://nexus.today36524.td/repository/maven-snapshots/")
+publishTo := Some("today-snapshots" at "http://nexus.today36524.td/repository/maven-releases/")
 
 credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.today36524.td", "central-services", "E@Z.nrW3")
 
