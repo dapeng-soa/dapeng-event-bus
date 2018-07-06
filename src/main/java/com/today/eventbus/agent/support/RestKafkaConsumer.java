@@ -131,12 +131,12 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
             if (postResult.getCode() == HttpStatus.SC_OK) {
                 String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
-                logger.info("[HttpClient]:response code: {}, event:{}, url:{}",
-                        response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
+                logger.info("[HttpClient]:response code: {}, event:{}, url:{},event内容:{}",
+                        response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), body.substring(0, 100));
             } else {
                 //重试
-                logger.error("[HttpClient]:调用远程url: {} 失败,http code: {},topic:{},event:{}",
-                        bizConsumer.getDestinationUrl(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent());
+                logger.error("[HttpClient]:调用远程url: {} 失败,http code: {},topic:{},event:{},event内容:{}",
+                        bizConsumer.getDestinationUrl(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent(), body.substring(0, 100));
                 // another thread to execute retry
                 InnerExecutor.service.execute(() -> {
                     int i = 1;
