@@ -97,7 +97,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                         logger.info("[" + getClass().getSimpleName() + "] while poll received : " + records.count() + " records");
                     }
                     for (ConsumerRecord<KEY, VALUE> record : records) {
-                        logger.info("[" + getClass().getSimpleName() + "] receive message (收到消息，准备处理), topic: {} ,partition: {} ,offset: {}",
+                        logger.info("[" + getClass().getSimpleName() + "] receive message (收到消息，准备过滤，然后处理), topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
                             for (ENDPOINT bizConsumer : bizConsumers) {
