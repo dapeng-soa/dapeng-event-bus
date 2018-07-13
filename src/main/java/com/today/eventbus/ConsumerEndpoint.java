@@ -105,8 +105,10 @@ public class ConsumerEndpoint {
      * 根据 serializer Class<?> 类型 创建实例 返回
      *
      * @return
-     * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
      */
+
     public BeanSerializer getEventSerializer() throws IllegalAccessException, InstantiationException {
         return (BeanSerializer) serializer.newInstance();
     }
