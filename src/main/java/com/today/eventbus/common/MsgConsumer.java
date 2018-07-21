@@ -51,7 +51,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     }
 
 
-    private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue();
+    private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue<>();
 
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
             new ThreadFactoryBuilder().setDaemon(true)
@@ -94,7 +94,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     if (records != null && logger.isDebugEnabled()) {
-                        logger.info("[" + getClass().getSimpleName() + "] while poll received : " + records.count() + " records");
+                        logger.info("[" + getClass().getSimpleName() + "] 每轮拉取消息数量,poll received : " + records.count() + " records");
                     }
                     for (ConsumerRecord<KEY, VALUE> record : records) {
                         logger.info("[" + getClass().getSimpleName() + "] receive message (收到消息，准备过滤，然后处理), topic: {} ,partition: {} ,offset: {}",
@@ -104,7 +104,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                                 dealMessage(bizConsumer, record.value());
                             }
                         } catch (Exception e) {
-                            logger.error("[" + getClass().getSimpleName() + "]<->[订阅消息处理失败]: " + e.getMessage(), e);
+                            logger.error(getClass().getSimpleName() + "::[订阅消息处理失败]: " + e.getMessage(), e);
                             retryMsgQueue.put(record);
                         }
                     }
@@ -136,10 +136,10 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         if (target instanceof UndeclaredThrowableException) {
             target = target.getCause();
         }
-        logger.error("[" + getClass().getSimpleName() + "]<->[TargetException]:" + target.getClass(), target.getMessage());
+        logger.error("[" + getClass().getSimpleName() + "]::[TargetException]:" + target.getClass(), target.getMessage());
 
         if (target instanceof SoaException) {
-            logger.error("[" + getClass().getSimpleName() + "]<->[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage(), target);
+            logger.error("[" + getClass().getSimpleName() + "]::[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage(), target);
             return;
         }
         throw new SoaException("deal message failed, throws: " + target.getMessage(), methodName);
@@ -150,7 +150,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
             while (true) {
                 try {
                     ConsumerRecord<KEY, VALUE> record = retryMsgQueue.take();
-                    logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 消息偏移量:[{}],进行重试 ", record.offset());
+                    logger.error("[" + getClass().getSimpleName() + "]::[Retry]: 消息偏移量:[{}],进行重试 ", record.offset());
 
                     for (ENDPOINT endpoint : bizConsumers) {
                         /**
@@ -170,8 +170,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     @Deprecated
     private void dealRetryEx(ConsumerRecord<KEY, VALUE> record, Exception e) {
         long offset = record.offset();
-        logger.error("[" + getClass().getSimpleName() + "]<->[dealMessage error]: " + e.getMessage());
-        logger.error("[" + getClass().getSimpleName() + "]<->[Retry]: 消息偏移量:[{}] 处理消息失败，进行重试 ", offset);
+        logger.error("[" + getClass().getSimpleName() + "]::[dealMessage error]: " + e.getMessage());
+        logger.error("[" + getClass().getSimpleName() + "]::[Retry]: 消息偏移量:[{}] 处理消息失败，进行重试 ", offset);
 
         int partition = record.partition();
         String topic = record.topic();

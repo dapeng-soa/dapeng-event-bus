@@ -126,7 +126,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
             List<NameValuePair> pairs = combinesParams(eventType, body);
 
-            logger.info("[RestKafkaConsumer]:解析消息成功,准备 httpClient post request !");
+            logger.info("[RestKafkaConsumer]:解析消息成功,准备请求调用!");
             ResponseResult postResult = post(bizConsumer.getDestinationUrl(), pairs);
 
             if (postResult.getCode() == HttpStatus.SC_OK) {
@@ -153,6 +153,11 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                         logger.info("重试返回结果:response code: {}, event:{}, url:{}",
                                 CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
+                    if (threadResult.getCode() == HttpStatus.SC_OK) {
+                        logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);
+                    } else {
+                        logger.error("[HttpClient]:消息代理经过3次重试,仍然调用失败!!");
+                    }
                 });
             }
         }

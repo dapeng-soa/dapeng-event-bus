@@ -10,7 +10,20 @@ scalaVersion := "2.12.4"
 
 resolvers ++= List("today nexus" at "http://nexus.today36524.td/repository/maven-public/")
 
-publishTo := Some("today-snapshots" at "http://nexus.today36524.td/repository/maven-releases/")
+//publishTo := Some("today-snapshots" at "http://nexus.today36524.td/repository/maven-releases/")
+publishTo := {
+  val isSnapshot = version.value.contains("-SNAPSHOT")
+  val nexusPrefix = "http://nexus.today36524.td/repository/"
+  val (name, url) = if (isSnapshot)
+    ("today-snapshots", nexusPrefix + "maven-snapshots")
+  else
+    ("today-releases", nexusPrefix + "maven-releases")
+  Some(Resolver.url(name, new URL(url)))
+}
+
+publishConfiguration := publishConfiguration.value.withOverwrite(true)
+
+
 
 credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.today36524.td", "central-services", "E@Z.nrW3")
 
