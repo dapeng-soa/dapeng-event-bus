@@ -76,8 +76,9 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
             logger.error(
               s"""MsgKafkaProducer <--> batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
             throw exception
+          } else {
+            logger.debug(s"发送消息,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}")
           }
-
         })
       })
       producer.commitTransaction()

@@ -33,10 +33,10 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
     @Override
     protected void init() {
-        logger.info(new StringBuffer("[KafkaConsumer] [init] ")
-                .append("kafkaConnect(").append(kafkaConnect)
-                .append(") groupId(").append(groupId)
-                .append(") topic(").append(topic).append(")").toString());
+        logger.info("[KafkaConsumer] [init] " +
+                "kafkaConnect(" + kafkaConnect +
+                ") groupId(" + groupId +
+                ") topic(" + topic + ")");
 
         KafkaConfigBuilder.ConsumerConfiguration builder = KafkaConfigBuilder.defaultConsumer();
 
@@ -65,13 +65,12 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
             try {
                 consumer.getMethod().invoke(consumer.getBean(), binlogEvents);
             } catch (IllegalAccessException e) {
-                logger.error("[" + getClass().getSimpleName() + "] <-> 实例化@BinlogListener 注解的方法 出错", e);
+                logger.error("BinlogConsumer::实例化@BinlogListener 注解的方法 出错", e);
             } catch (InvocationTargetException e) {
                 throwRealException(e, consumer.getMethod().getName());
             }
-            logger.info("[{}]<->[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}",
+            logger.info("BinlogConsumer::[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}",
                     consumer.getMethod().getName(), groupId, topic, consumer.getBean());
-
         }
 
     }
