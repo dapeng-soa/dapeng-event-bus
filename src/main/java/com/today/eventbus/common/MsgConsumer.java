@@ -88,7 +88,9 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     @Override
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
-        this.consumer.subscribe(Arrays.asList(this.topic));
+        //增加partition平衡监听器回调
+        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
+
         while (true) {
             try {
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
