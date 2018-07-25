@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @author hz.lei
  * @since 2018年03月02日 上午1:29
  */
-public class KafkaListenerRegistrar implements InitializingBean, Lifecycle {
+public class KafkaListenerRegistrar implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaListenerRegistrar.class);
     private final List<ConsumerEndpoint> endpointDescriptors = new ArrayList<>();
@@ -77,7 +77,9 @@ public class KafkaListenerRegistrar implements InitializingBean, Lifecycle {
         }
     }
 
-    @Override
+    /**
+     * for {@link MsgAnnotationBeanPostProcessor} to call when all singleton bean init.
+     */
     public void afterPropertiesSet() {
         logger.info("ready to start consumer ,event consumer size {}, binlog consumer size {}", EVENT_CONSUMERS.size(), BINLOG_CONSUMERS.size());
         if ((EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size()) > 0) {
@@ -105,6 +107,7 @@ public class KafkaListenerRegistrar implements InitializingBean, Lifecycle {
             executorService.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
+        logger.info("KafkaListenerRegistrar stop is already stopping!");
         isRunning = false;
     }
 

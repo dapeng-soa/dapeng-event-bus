@@ -13,4 +13,6 @@ public interface Constant {
     String DEFAULT_EVENT_DATA_TABLE_NAME = "dp_common_event";
 
     String DEFAULT_EVENT_LOCK_TABLE_NAME = "dp_event_lock";
+
+    String KAFKA_LISTENER_REGISTRAR_BEAN_NAME = "kafkaListenerRegistrar";
 }
