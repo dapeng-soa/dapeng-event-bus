@@ -25,7 +25,7 @@ public class MsgConsumerRebalanceListener implements ConsumerRebalanceListener {
 
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-        logger.info("partition重新分配,回调onPartitionsRevoked ");
+        logger.info("[RebalanceListener-Revoked]:reblance触发, partition被收回");
         partitions.forEach(p -> {
             long position = consumer.position(p);
             logger.info("partition:{}, next offset:{} ", p, position);
@@ -38,7 +38,7 @@ public class MsgConsumerRebalanceListener implements ConsumerRebalanceListener {
 
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-        logger.info("partition重新分配,onPartitionsAssigned ");
+        logger.info("[RebalanceListener-Assigned]:reblance 触发, partition重新分配");
         partitions.forEach(partition -> {
             //获取消费偏移量，实现原理是向协调者发送获取请求
             OffsetAndMetadata offset = consumer.committed(partition);
