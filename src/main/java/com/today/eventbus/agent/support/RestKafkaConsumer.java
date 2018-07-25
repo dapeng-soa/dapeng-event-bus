@@ -12,6 +12,7 @@ import com.today.eventbus.agent.support.parse.BizConsumer;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
+import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import com.today.eventbus.utils.CharDecodeUtil;
 import com.today.eventbus.utils.ResponseResult;
@@ -26,7 +27,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.LongDeserializer;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -71,7 +71,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
         final Properties props = builder.bootstrapServers(kafkaConnect)
                 .group(groupId)
-                .withKeyDeserializer(LongDeserializer.class)
+                .withKeyDeserializer(KafkaLongDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
