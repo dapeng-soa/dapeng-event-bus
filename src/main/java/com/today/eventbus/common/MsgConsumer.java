@@ -41,15 +41,21 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     protected RetryStrategy retryStrategy;
 
+    private volatile boolean isRunning;
+
     public MsgConsumer(String kafkaHost, String groupId, String topic) {
         this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
         init();
         beginRetry();
-
+        isRunning = true;
     }
 
+    public void stopRunning() {
+        isRunning = false;
+        logger.info(getClass().getSimpleName() + "::stop the kafka consumer to fetch message ");
+    }
 
     private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue<>();
 
@@ -91,7 +97,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         //增加partition平衡监听器回调
         this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
 
-        while (true) {
+        while (isRunning) {
             try {
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
@@ -121,7 +127,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
             }
         }
-
+        logger.info("kafka consumer inRunning  ");
     }
 
     /**

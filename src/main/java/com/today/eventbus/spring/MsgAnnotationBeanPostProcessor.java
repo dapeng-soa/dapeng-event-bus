@@ -9,8 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -25,18 +29,50 @@ import java.util.*;
  * @author hz.lei
  * @since 2018年03月01日 下午9:36
  */
-public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordered, SmartInitializingSingleton {
+public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFactoryAware, Ordered, SmartInitializingSingleton {
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private KafkaListenerRegistrar registrar = new KafkaListenerRegistrar();
+    private BeanFactory beanFactory;
+
+    private KafkaListenerRegistrar registrar;
+
+    private final String KAFKA_LISTENER_REGISTRAR_BEAN_NAME = "kafkaListenerRegistrar";
+
+
+    /**
+     * @param beanFactory
+     * @throws BeansException
+     */
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+        createKafkaRegistryBean();
+
+    }
+
+    /**
+     *
+     */
+    private void createKafkaRegistryBean() {
+        // 获取bean工厂并转换为DefaultListableBeanFactory
+        DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) beanFactory;
+        // 通过BeanDefinitionBuilder创建bean定义
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(KafkaListenerRegistrar.class);
+        // 注册bean
+        defaultListableBeanFactory.registerBeanDefinition(KAFKA_LISTENER_REGISTRAR_BEAN_NAME, beanDefinitionBuilder.getRawBeanDefinition());
+
+        this.registrar = (KafkaListenerRegistrar) beanFactory.getBean(KAFKA_LISTENER_REGISTRAR_BEAN_NAME);
+    }
 
     /**
      * 所有单例 bean 初始化完成后，调用此方法
      */
     @Override
     public void afterSingletonsInstantiated() {
+
+
         this.registrar.afterPropertiesSet();
     }
 
@@ -51,6 +87,7 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
      */
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+
         return bean;
     }
 
@@ -256,5 +293,6 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, Ordere
     public int getOrder() {
         return LOWEST_PRECEDENCE;
     }
+
 
 }
