@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,11 +124,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                     }
                 }
 
+            } catch (SerializationException ex) {
+                logger.error("kafka consumer poll 反序列化消息异常:" + ex.getMessage(), ex);
             } catch (Exception e) {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
             }
         }
-        logger.info("kafka consumer inRunning  ");
+        consumer.close();
+        logger.info("[{}]::kafka consumer stop running already!", getClass().getSimpleName());
     }
 
     /**

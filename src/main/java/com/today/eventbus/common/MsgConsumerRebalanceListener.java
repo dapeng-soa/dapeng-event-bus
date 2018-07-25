@@ -44,7 +44,7 @@ public class MsgConsumerRebalanceListener implements ConsumerRebalanceListener {
             OffsetAndMetadata offset = consumer.committed(partition);
             logger.info("onPartitionsAssigned: partition:{}, offset:{}", partition, offset);
             if (offset == null) {
-                consumer.commitSync();
+                logger.info("assigned offset is null ,do nothing for it !");
             } else {
                 //设置本地拉取分量，下次拉取消息以这个偏移量为准
                 consumer.seek(partition, offset.offset());
