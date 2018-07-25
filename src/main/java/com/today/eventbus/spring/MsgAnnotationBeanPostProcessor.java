@@ -19,9 +19,11 @@ import org.springframework.core.MethodIntrospector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
+import com.today.eventbus.utils.Constant;
 
 import java.lang.reflect.Method;
 import java.util.*;
+
 
 /**
  * 描述: MsgAnnotationBeanPostProcessor bean 后处理器，扫描自定义注解 @KafkaListener
@@ -30,18 +32,24 @@ import java.util.*;
  * @since 2018年03月01日 下午9:36
  */
 public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFactoryAware, Ordered, SmartInitializingSingleton {
-
-
+    /**
+     * logger
+     */
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
+    /**
+     * hold beanFactory ,real impl is {@link DefaultListableBeanFactory}
+     * for create bean dynamically, bean {@link KafkaListenerRegistrar}
+     */
     private BeanFactory beanFactory;
-
+    /**
+     * 处理 kafka 消费者 的注册与创建
+     */
     private KafkaListenerRegistrar registrar;
-
-    private final String KAFKA_LISTENER_REGISTRAR_BEAN_NAME = "kafkaListenerRegistrar";
 
 
     /**
+     * beanFactory 回调，让bean持有容器的引用
+     *
      * @param beanFactory
      * @throws BeansException
      */
@@ -53,7 +61,7 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
     }
 
     /**
-     *
+     * 动态创建bean KafkaListenerRegistrar
      */
     private void createKafkaRegistryBean() {
         // 获取bean工厂并转换为DefaultListableBeanFactory
@@ -61,9 +69,9 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
         // 通过BeanDefinitionBuilder创建bean定义
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(KafkaListenerRegistrar.class);
         // 注册bean
-        defaultListableBeanFactory.registerBeanDefinition(KAFKA_LISTENER_REGISTRAR_BEAN_NAME, beanDefinitionBuilder.getRawBeanDefinition());
+        defaultListableBeanFactory.registerBeanDefinition(Constant.KAFKA_LISTENER_REGISTRAR_BEAN_NAME, beanDefinitionBuilder.getRawBeanDefinition());
 
-        this.registrar = (KafkaListenerRegistrar) beanFactory.getBean(KAFKA_LISTENER_REGISTRAR_BEAN_NAME);
+        this.registrar = (KafkaListenerRegistrar) beanFactory.getBean(Constant.KAFKA_LISTENER_REGISTRAR_BEAN_NAME);
     }
 
     /**
@@ -71,8 +79,6 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
      */
     @Override
     public void afterSingletonsInstantiated() {
-
-
         this.registrar.afterPropertiesSet();
     }
 
