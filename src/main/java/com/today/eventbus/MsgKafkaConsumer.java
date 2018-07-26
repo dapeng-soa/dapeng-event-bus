@@ -33,10 +33,10 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
     @Override
     protected void init() {
-        logger.info(new StringBuffer("[KafkaConsumer] [init] ")
-                .append("kafkaConnect(").append(kafkaConnect)
-                .append(") groupId(").append(groupId)
-                .append(") topic(").append(topic).append(")").toString());
+        logger.info("[KafkaConsumer] [init] " +
+                "kafkaConnect(" + kafkaConnect +
+                ") groupId(" + groupId +
+                ") topic(" + topic + ")");
 
         KafkaConfigBuilder.ConsumerConfiguration builder = KafkaConfigBuilder.defaultConsumer();
 

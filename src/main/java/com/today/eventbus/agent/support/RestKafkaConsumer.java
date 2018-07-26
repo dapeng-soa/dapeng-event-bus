@@ -62,10 +62,10 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
     @Override
     protected void init() {
-        logger.info(new StringBuffer("[RestKafkaConsumer] [init] ")
-                .append("kafkaConnect(").append(kafkaConnect)
-                .append(") groupId(").append(groupId)
-                .append(") topic(").append(topic).append(")").toString());
+        logger.info("[RestKafkaConsumer] [init] " +
+                "kafkaConnect(" + kafkaConnect +
+                ") groupId(" + groupId +
+                ") topic(" + topic + ")");
 
         KafkaConfigBuilder.ConsumerConfiguration builder = KafkaConfigBuilder.defaultConsumer();
 
@@ -96,7 +96,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 i++;
                 try {
                     Thread.sleep(i * 1000);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         }
