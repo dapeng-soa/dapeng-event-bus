@@ -6,7 +6,6 @@ import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.common.MsgConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.Lifecycle;
 import org.springframework.util.Assert;
 
@@ -107,7 +106,7 @@ public class KafkaListenerRegistrar implements Lifecycle {
             executorService.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
-        logger.info("KafkaListenerRegistrar stop is already stopping!");
+        logger.info("KafkaListenerRegistrar  is already stopped!");
         isRunning = false;
     }
 
