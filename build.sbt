@@ -31,6 +31,7 @@ credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.today3652
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.13",
   "org.springframework" % "spring-aop" % "4.3.5.RELEASE",
+  "org.springframework" % "spring-context" % "4.3.5.RELEASE",
   "org.springframework" % "spring-aspects" % "4.3.5.RELEASE",
   "org.apache.kafka" % "kafka-clients" % "1.1.0",
   "com.github.wangzaixiang" %% "scala-sql" % "2.0.6",

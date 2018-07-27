@@ -12,6 +12,7 @@ import com.today.eventbus.agent.support.parse.BizConsumer;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
+import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import com.today.eventbus.utils.CharDecodeUtil;
 import com.today.eventbus.utils.ResponseResult;
@@ -26,7 +27,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.LongDeserializer;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -62,16 +62,16 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
     @Override
     protected void init() {
-        logger.info(new StringBuffer("[RestKafkaConsumer] [init] ")
-                .append("kafkaConnect(").append(kafkaConnect)
-                .append(") groupId(").append(groupId)
-                .append(") topic(").append(topic).append(")").toString());
+        logger.info("[RestKafkaConsumer] [init] " +
+                "kafkaConnect(" + kafkaConnect +
+                ") groupId(" + groupId +
+                ") topic(" + topic + ")");
 
         KafkaConfigBuilder.ConsumerConfiguration builder = KafkaConfigBuilder.defaultConsumer();
 
         final Properties props = builder.bootstrapServers(kafkaConnect)
                 .group(groupId)
-                .withKeyDeserializer(LongDeserializer.class)
+                .withKeyDeserializer(KafkaLongDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
@@ -96,7 +96,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 i++;
                 try {
                     Thread.sleep(i * 1000);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         }
@@ -135,7 +135,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                         response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), body.substring(0, 100));
             } else {
                 //重试
-                logger.error("[HttpClient]:调用远程url: {} 失败,http code: {},topic:{},event:{},event内容:{}",
+                logger.warn("[HttpClient]:调用远程url: {} 失败,进行重试。http code: {},topic:{},event:{},event内容:{}",
                         bizConsumer.getDestinationUrl(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent(), body.substring(0, 100));
                 // another thread to execute retry
                 InnerExecutor.service.execute(() -> {
@@ -156,7 +156,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                     if (threadResult.getCode() == HttpStatus.SC_OK) {
                         logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);
                     } else {
-                        logger.error("[HttpClient]:消息代理经过3次重试,仍然调用失败!!");
+                        logger.error("[HttpClient]:消息代理经过3次重试,仍然调用失败,失败原因:" + threadResult.getEx().getMessage(), threadResult.getEx());
                     }
                 });
             }
@@ -170,13 +170,13 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
      * @param arguments
      * @return
      */
-    public ResponseResult post(String uri, List<NameValuePair> arguments) {
+    private ResponseResult post(String uri, List<NameValuePair> arguments) {
 
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(arguments, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException ignored) {
         }
 
         CloseableHttpResponse response = null;
@@ -185,9 +185,10 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
             int code = response.getStatusLine().getStatusCode();
             String content = EntityUtils.toString(response.getEntity(), "UTF-8");
-            return new ResponseResult(code, content);
+            return new ResponseResult(code, content, null);
         } catch (IOException e) {
-            logger.error("[RestKafkaConsumer]<->[execute httpClient error] " + e.getMessage(), e);
+            logger.warn("[RestKafkaConsumer]::[httpClient调用失败] " + e.getMessage(), e);
+            return new ResponseResult(-1, "", e);
         } finally {
             // close resource
             if (response != null) {
@@ -206,8 +207,6 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 }
             }
         }
-
-        return new ResponseResult(-1, "");
     }
 
 
