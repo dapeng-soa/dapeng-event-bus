@@ -5,10 +5,10 @@ import com.github.dapeng.org.apache.thrift.TException;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
+import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.LongDeserializer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -33,16 +33,16 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
     @Override
     protected void init() {
-        logger.info(new StringBuffer("[KafkaConsumer] [init] ")
-                .append("kafkaConnect(").append(kafkaConnect)
-                .append(") groupId(").append(groupId)
-                .append(") topic(").append(topic).append(")").toString());
+        logger.info("[KafkaConsumer] [init] " +
+                "kafkaConnect(" + kafkaConnect +
+                ") groupId(" + groupId +
+                ") topic(" + topic + ")");
 
         KafkaConfigBuilder.ConsumerConfiguration builder = KafkaConfigBuilder.defaultConsumer();
 
         final Properties props = builder.bootstrapServers(kafkaConnect)
                 .group(groupId)
-                .withKeyDeserializer(LongDeserializer.class)
+                .withKeyDeserializer(KafkaLongDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")

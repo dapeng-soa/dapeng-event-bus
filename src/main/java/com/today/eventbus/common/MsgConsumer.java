@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,15 +42,21 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     protected RetryStrategy retryStrategy;
 
+    private volatile boolean isRunning;
+
     public MsgConsumer(String kafkaHost, String groupId, String topic) {
         this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
         init();
         beginRetry();
-
+        isRunning = true;
     }
 
+    public void stopRunning() {
+        isRunning = false;
+        logger.info(getClass().getSimpleName() + "::stop the kafka consumer to fetch message ");
+    }
 
     private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue<>();
 
@@ -88,8 +95,10 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     @Override
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
-        this.consumer.subscribe(Arrays.asList(this.topic));
-        while (true) {
+        //增加partition平衡监听器回调
+        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
+
+        while (isRunning) {
             try {
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
@@ -115,11 +124,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                     }
                 }
 
+            } catch (SerializationException ex) {
+                logger.error("kafka consumer poll 反序列化消息异常:" + ex.getMessage(), ex);
             } catch (Exception e) {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
             }
         }
-
+        consumer.close();
+        logger.info("[{}]::kafka consumer stop running already!", getClass().getSimpleName());
     }
 
     /**

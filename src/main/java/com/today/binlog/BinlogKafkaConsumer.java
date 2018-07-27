@@ -5,9 +5,9 @@ import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.BinlogRetryStrategy;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.config.KafkaConfigBuilder;
+import com.today.eventbus.serializer.KafkaIntDeserializer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.IntegerDeserializer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -42,7 +42,7 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
         final Properties props = builder.bootstrapServers(kafkaConnect)
                 .group(groupId)
-                .withKeyDeserializer(IntegerDeserializer.class)
+                .withKeyDeserializer(KafkaIntDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .excludeInternalTopic("false")

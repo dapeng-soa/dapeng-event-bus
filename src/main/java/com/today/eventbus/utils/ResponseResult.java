@@ -11,9 +11,12 @@ public class ResponseResult {
     private int code;
     private String content;
 
-    public ResponseResult(int code, String content) {
+    private Exception ex;
+
+    public ResponseResult(int code, String content, Exception ex) {
         this.code = code;
         this.content = content;
+        this.ex = ex;
     }
 
     public int getCode() {
@@ -22,5 +25,9 @@ public class ResponseResult {
 
     public String getContent() {
         return content;
+    }
+
+    public Exception getEx() {
+        return ex;
     }
 }
