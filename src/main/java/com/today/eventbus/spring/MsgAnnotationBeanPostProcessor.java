@@ -29,6 +29,7 @@ import java.util.*;
  * 描述: MsgAnnotationBeanPostProcessor bean 后处理器，扫描自定义注解 @KafkaListener
  *
  * @author hz.lei
+ * @see KafkaListenerRegistrar,BeanFactory,BeanPostProcessor,SmartInitializingSingleton
  * @since 2018年03月01日 下午9:36
  */
 public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFactoryAware, Ordered, SmartInitializingSingleton {

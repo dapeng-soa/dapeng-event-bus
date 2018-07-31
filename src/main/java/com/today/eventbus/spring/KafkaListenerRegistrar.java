@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 描述:
+ * 描述: kafka 消费者 registry 注册 bean
  *
  * @author hz.lei
  * @since 2018年03月02日 上午1:29
@@ -29,9 +29,9 @@ public class KafkaListenerRegistrar implements Lifecycle {
 
     private ExecutorService executorService;
 
-    public static final Map<String, MsgKafkaConsumer> EVENT_CONSUMERS = new HashMap<>();
+    private static final Map<String, MsgKafkaConsumer> EVENT_CONSUMERS = new HashMap<>();
 
-    public static final Map<String, BinlogKafkaConsumer> BINLOG_CONSUMERS = new HashMap<>();
+    private static final Map<String, BinlogKafkaConsumer> BINLOG_CONSUMERS = new HashMap<>();
 
     public void registerEndpoint(ConsumerEndpoint endpoint) {
         Assert.notNull(endpoint, "Endpoint must be set");
@@ -41,7 +41,7 @@ public class KafkaListenerRegistrar implements Lifecycle {
     }
 
 
-    public void addConsumer(ConsumerEndpoint endpoint) {
+    private void addConsumer(ConsumerEndpoint endpoint) {
         String groupId = endpoint.getGroupId();
         String topic = endpoint.getTopic();
         String kafkaHost = endpoint.getKafkaHost();
@@ -98,7 +98,7 @@ public class KafkaListenerRegistrar implements Lifecycle {
 
     @Override
     public void stop() {
-        logger.info("==============> begin to stop  KafkaListenerRegistrar");
+        logger.info("==============> begin to stop KafkaListenerRegistrar");
         EVENT_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
         BINLOG_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
         executorService.shutdown();
@@ -106,7 +106,7 @@ public class KafkaListenerRegistrar implements Lifecycle {
             executorService.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
-        logger.info("KafkaListenerRegistrar  is already stopped!");
+        logger.info("KafkaListenerRegistrar is already stopped!");
         isRunning = false;
     }
 
