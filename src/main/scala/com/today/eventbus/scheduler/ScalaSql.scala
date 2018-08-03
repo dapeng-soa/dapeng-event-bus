@@ -28,6 +28,7 @@ object ScalaSql {
       result
     } catch {
       case ex: Throwable =>
+        logger.error(s"提交事务异常，回滚 ${ex.getMessage}")
         conn.rollback
         throw ex
     } finally {
