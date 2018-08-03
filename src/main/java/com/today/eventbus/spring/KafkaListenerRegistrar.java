@@ -101,10 +101,12 @@ public class KafkaListenerRegistrar implements Lifecycle {
         logger.info("==============> begin to stop KafkaListenerRegistrar");
         EVENT_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
         BINLOG_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
-        executorService.shutdown();
-        try {
-            executorService.awaitTermination(30, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+        if (executorService != null) {
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
         }
         logger.info("KafkaListenerRegistrar is already stopped!");
         isRunning = false;
