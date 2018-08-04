@@ -101,7 +101,6 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 consumer.getMethod().invoke(consumer.getBean(), event);
                 logger.info("[{}]<->[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
                         getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
-                MDC.remove(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID);
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
             } catch (InvocationTargetException e) {
