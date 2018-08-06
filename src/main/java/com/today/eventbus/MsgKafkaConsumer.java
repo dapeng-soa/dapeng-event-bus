@@ -88,7 +88,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
         if (count > 0) {
             InvocationContext invocationCtx = InvocationContextImpl.Factory.currentInstance();
-            Long sessionTid = DapengUtil.generateTid();
+            long sessionTid = DapengUtil.generateTid();
             invocationCtx.sessionTid(sessionTid);
             MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
             logger.info("[{}]<->[开始处理消息]: method {}, groupId: {}, topic: {}, bean: {}",
@@ -110,8 +110,9 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
             } catch (InstantiationException e) {
                 logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
-            }finally {
+            } finally {
                 MDC.remove(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID);
+                InvocationContextImpl.Factory.removeCurrentInstance();
             }
         } else {
             logger.debug("[{}]<-> 方法 [ {} ] 不接收当前收到的消息类型 {} ", getClass().getSimpleName(), consumer.getMethod().getName(), eventType);
