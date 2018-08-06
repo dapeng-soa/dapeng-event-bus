@@ -1,6 +1,10 @@
 package com.today.eventbus;
 
+import com.github.dapeng.core.InvocationContext;
+import com.github.dapeng.core.InvocationContextImpl;
 import com.github.dapeng.core.SoaException;
+import com.github.dapeng.core.helper.DapengUtil;
+import com.github.dapeng.core.helper.SoaSystemEnvProperties;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
@@ -9,6 +13,7 @@ import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.slf4j.MDC;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -84,6 +89,10 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
         if (count > 0) {
             logger.info("[{}]<->[开始处理消息]: method {}, groupId: {}, topic: {}, bean: {}",
                     getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+            InvocationContext invocationCtx = InvocationContextImpl.Factory.currentInstance();
+            long sessionTid = DapengUtil.generateTid();
+            invocationCtx.sessionTid(sessionTid);
+            MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
 
             byte[] eventBinary = processor.getEventBinary();
 
@@ -102,6 +111,9 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
             } catch (InstantiationException e) {
                 logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
+            } finally {
+                MDC.remove(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID);
+                InvocationContextImpl.Factory.removeCurrentInstance();
             }
         } else {
             logger.debug("[{}]<-> 方法 [ {} ] 不接收当前收到的消息类型 {} ", getClass().getSimpleName(), consumer.getMethod().getName(), eventType);
