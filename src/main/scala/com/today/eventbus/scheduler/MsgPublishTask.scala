@@ -36,16 +36,16 @@ class MsgPublishTask(topic: String,
   private val producer = new MsgKafkaProducer(kafkaHost, tid)
   logger.warn("Kafka producer transactionId:" + tid)
 
-  val period = SysEnvUtil.SOA_EVENTBUS_PERIOD.toLong
-  val initialDelay = 1000
+  private val period = SysEnvUtil.SOA_EVENTBUS_PERIOD.toLong
+  private val initialDelay = 1000
   logger.warn("Kafka producer fetch message period :" + period)
 
-  val logCount = new AtomicInteger(0)
+  private val logCount = new AtomicInteger(0)
   //每轮询100次，log一次日志
-  val logWhileLoop = 100
+  private val logWhileLoop = 100
 
-  val scheduledCount = new AtomicInteger(0)
-  val scheduledLoop = 500
+  private val scheduledCount = new AtomicInteger(0)
+  private val scheduledLoop = 500
 
 
   //----------------------------- master模式，只有master进行轮询 ---------
@@ -149,9 +149,13 @@ class MsgPublishTask(topic: String,
         }
 
         val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
-        if (eventMsgs.size > 0) {
-          val idStr: String = eventMsgs.map(_.id).mkString(",")
-          executeUpdate(conn, "DELETE FROM dp_common_event WHERE id in (" + idStr + ")")
+        if (eventMsgs.nonEmpty) {
+          /* val idStr: String = eventMsgs.map(_.id).mkString(",")
+           executeUpdate(conn, "DELETE FROM dp_common_event WHERE id in (" + idStr + ")")*/
+
+          eventMsgs.map(_.id).foreach(id => {
+            executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${id}")
+          })
 
           producer.batchSend(topic, eventMsgs)
         }
@@ -239,7 +243,6 @@ class MsgPublishTask(topic: String,
 
   override def destroy(): Unit = {
     logger.info("<<<<<< Spring容器销毁定时器 schedulerPublisher shutdown >>>>> ")
-//    logger.warn("<<<<<< Spring容器销毁定时器 schedulerPublisher shutdown >>>>> ")
     schedulerPublisher.shutdown()
   }
 }
