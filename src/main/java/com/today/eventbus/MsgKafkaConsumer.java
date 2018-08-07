@@ -53,6 +53,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .withIsolation("read_committed")
                 .withSessionTimeOut("300000")
                 .excludeInternalTopic("false")
+                .maxPollSize("50")
                 .build();
 
         consumer = new KafkaConsumer<>(props);
