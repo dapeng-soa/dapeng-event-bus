@@ -140,6 +140,11 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
+        public ConsumerConfiguration maxPollSize(String pollSize) {
+            properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, pollSize);
+            return this;
+        }
+
 
         @Override
         void validate() {
