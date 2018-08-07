@@ -115,12 +115,20 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                             logger.error(getClass().getSimpleName() + "::[订阅消息处理失败]: " + e.getMessage(), e);
                             retryMsgQueue.put(record);
                         }
+
+                        try {
+                            //records记录全部完成后，才提交
+                            consumer.commitSync();
+                        } catch (CommitFailedException e) {
+                            logger.error("commit failed", e);
+                        }
                     }
-                    try {
+                    /*try {
+                        //records记录全部完成后，才提交
                         consumer.commitSync();
                     } catch (CommitFailedException e) {
                         logger.error("commit failed", e);
-                    }
+                    }*/
                 }
 
             } catch (SerializationException ex) {
