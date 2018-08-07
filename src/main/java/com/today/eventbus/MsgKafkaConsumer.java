@@ -51,7 +51,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
-                .withSessionTimeOut("100000")
+                .withSessionTimeOut("300000")
                 .excludeInternalTopic("false")
                 .build();
 
@@ -93,10 +93,6 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
             logger.info("[{}]<->[开始处理消息]: method {}, groupId: {}, topic: {}, bean: {}",
                     getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
-            InvocationContext invocationCtx = InvocationContextImpl.Factory.currentInstance();
-            long sessionTid = DapengUtil.generateTid();
-            invocationCtx.sessionTid(sessionTid);
-            MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
 
             byte[] eventBinary = processor.getEventBinary();
 
