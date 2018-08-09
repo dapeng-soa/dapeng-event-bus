@@ -120,7 +120,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                             //records记录全部完成后，才提交
                             consumer.commitSync();
                         } catch (CommitFailedException e) {
-                            logger.error("commit failed", e);
+                            logger.error("commit failed,will break this for loop", e);
+                            break;
                         }
                     }
                     /*try {
