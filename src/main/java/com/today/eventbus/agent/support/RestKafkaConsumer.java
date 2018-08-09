@@ -172,7 +172,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
      * @return
      */
     private ResponseResult post(String uri, List<NameValuePair> arguments) {
-
+        long begin = System.currentTimeMillis();
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(uri);
         try {
@@ -186,6 +186,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
             int code = response.getStatusLine().getStatusCode();
             String content = EntityUtils.toString(response.getEntity(), "UTF-8");
+            logger.info("[HttpPost]请求耗时: {}ms", System.currentTimeMillis() - begin);
             return new ResponseResult(code, content, null);
         } catch (IOException e) {
             logger.warn("[RestKafkaConsumer]::[httpClient调用失败] " + e.getMessage(), e);
