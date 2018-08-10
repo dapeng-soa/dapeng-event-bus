@@ -51,7 +51,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .withValueDeserializer(ByteArrayDeserializer.class)
                 .withOffsetCommitted("false")
                 .withIsolation("read_committed")
-                .withSessionTimeOut("300000")
+//                .withSessionTimeOut("10000")
                 .excludeInternalTopic("false")
                 .maxPollSize("50")
                 .build();
