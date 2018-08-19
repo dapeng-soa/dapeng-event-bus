@@ -207,7 +207,8 @@ public abstract class KafkaConfigBuilder {
 
     private static void fill(final Properties source, final Properties target) {
         if (source != null && !source.isEmpty() && target != null) {
-            source.forEach((key, value) -> target.put(key, value));
+            //source.forEach((key, value) -> target.put(key, value));
+            source.forEach(target::put);
         }
 
     }
