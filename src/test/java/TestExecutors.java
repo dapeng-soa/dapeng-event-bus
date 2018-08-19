@@ -19,9 +19,14 @@ import java.util.concurrent.TimeUnit;
 public class TestExecutors {
 
     public static void main(String[] args) throws InterruptedException {
-        ExecutorService executorService = Executors.newCachedThreadPool();
+        String body = "dddddddd";
+        String info = body.substring(0, 100);
+
+        System.out.println(info);
+
+        /*ExecutorService executorService = Executors.newCachedThreadPool();
         executorService.shutdown();
         executorService.awaitTermination(1,TimeUnit.HOURS);
-        executorService.shutdown();
+        executorService.shutdown();*/
     }
 }
