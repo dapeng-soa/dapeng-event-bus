@@ -30,7 +30,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected List<ENDPOINT> bizConsumers = new ArrayList<>();
+    private List<ENDPOINT> bizConsumers = new ArrayList<>();
 
     protected String groupId;
 
@@ -117,7 +117,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                         }
 
                         try {
-                            //records记录全部完成后，才提交
+                            //record每消费一条就提交一次(性能会低点)
                             consumer.commitSync();
                         } catch (CommitFailedException e) {
                             logger.error("commit failed,will break this for loop", e);
