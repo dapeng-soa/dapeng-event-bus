@@ -12,6 +12,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * 描述: 处理 binlog 缓存 监听 事件
@@ -70,8 +71,13 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
             } catch (InvocationTargetException e) {
                 throwRealException(e, consumer.getMethod().getName());
             }
-            logger.info("BinlogConsumer::[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}",
-                    consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+
+            String infoLog = binlogEvents.stream().map(event ->
+                    "\nBinlogEvent:[DB: " + event.schema() + ", Table: " + event.tblName() + ", TYPE: " + event.eventType() + ", BEFORE: " + event.before() + ", AFTER: " + event.after() + " .]")
+                    .collect(Collectors.joining(","));
+
+            logger.info("BinlogConsumer::[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}, info:{}",
+                    consumer.getMethod().getName(), groupId, topic, consumer.getBean(), infoLog);
         }
 
     }
