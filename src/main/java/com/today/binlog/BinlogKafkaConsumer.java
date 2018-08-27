@@ -72,12 +72,8 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
                 throwRealException(e, consumer.getMethod().getName());
             }
 
-            String infoLog = binlogEvents.stream().map(event ->
-                    "\nBinlogEvent:[DB: " + event.schema() + ", Table: " + event.tblName() + ", TYPE: " + event.eventType() + ", BEFORE: " + event.before() + ", AFTER: " + event.after() + " .]")
-                    .collect(Collectors.joining(","));
-
-            logger.info("BinlogConsumer::[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}, info:{}",
-                    consumer.getMethod().getName(), groupId, topic, consumer.getBean(), infoLog);
+            logger.info("BinlogConsumer::[dealMessage] end, method: {}, groupId: {}, topic: {}, bean: {}",
+                    consumer.getMethod().getName(), groupId, topic, consumer.getBean());
         }
 
     }
