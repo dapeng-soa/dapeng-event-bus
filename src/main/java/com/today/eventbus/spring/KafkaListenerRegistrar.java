@@ -1,12 +1,13 @@
 package com.today.eventbus.spring;
 
+import com.github.dapeng.core.lifecycle.LifeCycleAware;
+import com.github.dapeng.core.lifecycle.LifeCycleEvent;
 import com.today.binlog.BinlogKafkaConsumer;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.common.MsgConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.Lifecycle;
 import org.springframework.util.Assert;
 
 import java.util.*;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @author hz.lei
  * @since 2018年03月02日 上午1:29
  */
-public class KafkaListenerRegistrar implements Lifecycle {
+public class KafkaListenerRegistrar implements LifeCycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaListenerRegistrar.class);
     private final List<ConsumerEndpoint> endpointDescriptors = new ArrayList<>();
@@ -91,13 +92,13 @@ public class KafkaListenerRegistrar implements Lifecycle {
     }
 
     @Override
-    public void start() {
+    public void onStart(LifeCycleEvent lifeCycleEvent) {
         logger.info("==============> begin to start KafkaListenerRegistrar");
         isRunning = true;
     }
 
     @Override
-    public void stop() {
+    public void onStop(LifeCycleEvent lifeCycleEvent) {
         logger.info("==============> begin to stop KafkaListenerRegistrar");
         EVENT_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
         BINLOG_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
@@ -116,4 +117,7 @@ public class KafkaListenerRegistrar implements Lifecycle {
     public boolean isRunning() {
         return isRunning;
     }
+
+
+
 }
