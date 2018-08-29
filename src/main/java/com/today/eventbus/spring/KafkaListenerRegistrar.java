@@ -93,12 +93,16 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
 
     @Override
     public void onStart(LifeCycleEvent lifeCycleEvent) {
+        if (isRunning) return;
+
         logger.info("==============> begin to start KafkaListenerRegistrar");
         isRunning = true;
     }
 
     @Override
     public void onStop(LifeCycleEvent lifeCycleEvent) {
+        if (!isRunning) return;
+
         logger.info("==============> begin to stop KafkaListenerRegistrar");
         EVENT_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
         BINLOG_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
@@ -112,12 +116,4 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
         logger.info("KafkaListenerRegistrar is already stopped!");
         isRunning = false;
     }
-
-    @Override
-    public boolean isRunning() {
-        return isRunning;
-    }
-
-
-
 }
