@@ -1,12 +1,10 @@
 package com.today.eventbus.agent.support;
 
-import com.github.dapeng.core.metadata.Service;
 import com.github.dapeng.json.JsonSerializer;
 import com.github.dapeng.json.OptimizedMetadata;
 import com.github.dapeng.openapi.cache.ServiceCache;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
-import com.github.dapeng.util.MetaDataUtil;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
 import com.today.eventbus.agent.support.parse.BizConsumer;
