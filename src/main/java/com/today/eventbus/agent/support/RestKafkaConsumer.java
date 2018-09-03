@@ -2,6 +2,7 @@ package com.today.eventbus.agent.support;
 
 import com.github.dapeng.core.metadata.Service;
 import com.github.dapeng.json.JsonSerializer;
+import com.github.dapeng.json.OptimizedMetadata;
 import com.github.dapeng.openapi.cache.ServiceCache;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
@@ -85,7 +86,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
     @Override
     protected void dealMessage(BizConsumer bizConsumer, byte[] value) throws TException {
-        Service service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
+        OptimizedMetadata.OptimizedService service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
             logger.warn("元数据信息service为空，未能获取到元数据!!!");
             int i = 0;
@@ -118,10 +119,15 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
          */
         if (filterBizConsumerByEventType(eventType, bizConsumer.getEvent())) {
             byte[] eventBinary = processor.getEventBinary();
+
+            if (service == null) {
+                throw new NullPointerException("OptimizedMetadata Service is null");
+            }
+
             /**
-             * 针对 dapeng 2.0.2
+             * 针对 dapeng 2.0.5 OptimizedMetadata
              */
-            JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), MetaDataUtil.findStruct(bizConsumer.getEvent(), service));
+            JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), service.getOptimizedStructs().getOrDefault(bizConsumer.getEvent(), null));
 
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
