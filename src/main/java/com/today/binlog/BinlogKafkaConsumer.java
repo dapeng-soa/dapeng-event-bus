@@ -45,8 +45,8 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
                 .group(groupId)
                 .withKeyDeserializer(KafkaIntDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
-                .withOffsetCommitted("false")
-                .excludeInternalTopic("false")
+                .withOffsetCommitted(false)
+                .excludeInternalTopic(false)
                 .maxPollSize("100")
                 .build();
 
