@@ -30,19 +30,13 @@ import java.util.Properties;
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
     /**
-     * session timeout
-     */
-    private final long timeout;
-
-    /**
      * @param kafkaHost host1:port1,host2:port2,...
      * @param groupId
      * @param topic
      * @param timeout
      */
-    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic, long timeout) {
-        super(kafkaHost, groupId, topic);
-        this.timeout = timeout;
+    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic, int timeout) {
+        super(kafkaHost, groupId, topic, timeout);
     }
 
     @Override
@@ -64,7 +58,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
         //增加 session.timeout 的配置
         if (timeout > Constant.DEFAULT_SESSION_TIMEOUT) {
-            long heartbeat = timeout / 3;
+            int heartbeat = timeout / 3;
             props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, timeout);
             props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeat);
         }

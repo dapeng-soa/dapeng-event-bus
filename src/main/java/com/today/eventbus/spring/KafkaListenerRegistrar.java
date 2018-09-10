@@ -46,7 +46,7 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
         String groupId = endpoint.getGroupId();
         String topic = endpoint.getTopic();
         String kafkaHost = endpoint.getKafkaHost();
-        long timeout = endpoint.getTimeout() >= 10000L ? endpoint.getTimeout() : 10000L;
+        int timeout = endpoint.getTimeout() >= 10000 ? endpoint.getTimeout() : 10000;
         try {
             // 默认 group id
             String className = endpoint.getBean().getClass().getName();

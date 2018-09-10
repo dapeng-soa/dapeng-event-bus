@@ -36,7 +36,7 @@ public class ConsumerEndpoint {
     /**
      * session timeout
      */
-    private long timeout;
+    private int timeout;
 
     public String getGroupId() {
         return groupId;
@@ -106,11 +106,11 @@ public class ConsumerEndpoint {
         isBinlog = binlog;
     }
 
-    public long getTimeout() {
+    public int getTimeout() {
         return timeout;
     }
 
-    public void setTimeout(long timeout) {
+    public void setTimeout(int timeout) {
         this.timeout = timeout;
     }
 

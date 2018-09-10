@@ -18,7 +18,7 @@ public interface Constant {
     /**
      * ms
      */
-    long DEFAULT_SESSION_TIMEOUT = 10000L;
+    int DEFAULT_SESSION_TIMEOUT = 10000;
 
     /**
      * per poll max message size

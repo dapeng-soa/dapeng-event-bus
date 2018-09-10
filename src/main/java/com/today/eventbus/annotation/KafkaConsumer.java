@@ -31,5 +31,5 @@ public @interface KafkaConsumer {
     /**
      * session.time.out 会话超时时间
      */
-    long sessionTimeout() default 10000L;
+    int sessionTimeout() default 10000;
 }
