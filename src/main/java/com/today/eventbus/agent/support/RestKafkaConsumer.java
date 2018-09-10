@@ -14,6 +14,7 @@ import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import com.today.eventbus.utils.CharDecodeUtil;
+import com.today.eventbus.utils.Constant;
 import com.today.eventbus.utils.ResponseResult;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -72,12 +73,12 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 .group(groupId)
                 .withKeyDeserializer(KafkaLongDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
-                .withOffsetCommitted("false")
-                .withIsolation("read_committed")
-//                .withSessionTimeOut("300000")
-                .excludeInternalTopic("false")
-                .maxPollSize("50")
+                .withOffsetCommitted(false)
+                .excludeInternalTopic(false)
+                .withIsolation(Constant.ISOLATION_LEVEL)
+                .maxPollSize(Constant.MAX_POLL_SIZE)
                 .build();
+
         consumer = new KafkaConsumer<>(props);
     }
 
