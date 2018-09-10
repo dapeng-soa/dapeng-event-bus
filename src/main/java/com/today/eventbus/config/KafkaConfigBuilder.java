@@ -110,7 +110,7 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
-        public ConsumerConfiguration withOffsetCommitted(String flag) {
+        public ConsumerConfiguration withOffsetCommitted(boolean flag) {
             properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, flag);
             return this;
         }
@@ -125,7 +125,7 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
-        public ConsumerConfiguration withSessionTimeOut(String sessionTimeOut) {
+        public ConsumerConfiguration withSessionTimeOut(long sessionTimeOut) {
             properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeOut);
             return this;
         }
@@ -135,13 +135,18 @@ public abstract class KafkaConfigBuilder {
             return this;
         }
 
-        public ConsumerConfiguration excludeInternalTopic(String isExcluedTopics) {
+        public ConsumerConfiguration excludeInternalTopic(boolean isExcluedTopics) {
             properties.put(ConsumerConfig.EXCLUDE_INTERNAL_TOPICS_CONFIG, isExcluedTopics);
             return this;
         }
 
         public ConsumerConfiguration maxPollSize(String pollSize) {
             properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, pollSize);
+            return this;
+        }
+
+        public ConsumerConfiguration withHeartBeatInterval(long interval) {
+            properties.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, interval);
             return this;
         }
 

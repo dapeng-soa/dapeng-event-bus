@@ -46,6 +46,7 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
         String groupId = endpoint.getGroupId();
         String topic = endpoint.getTopic();
         String kafkaHost = endpoint.getKafkaHost();
+        long timeout = endpoint.getTimeout() >= 10000L ? endpoint.getTimeout() : 10000L;
         try {
             // 默认 group id
             String className = endpoint.getBean().getClass().getName();
@@ -67,7 +68,7 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
                 if (EVENT_CONSUMERS.containsKey(consumerKey)) {
                     EVENT_CONSUMERS.get(consumerKey).addConsumer(endpoint);
                 } else {
-                    MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost, groupId, topic);
+                    MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost, groupId, topic, timeout);
                     consumer.addConsumer(endpoint);
                     EVENT_CONSUMERS.put(consumerKey, consumer);
                 }
