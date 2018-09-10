@@ -33,6 +33,11 @@ public class ConsumerEndpoint {
 
     private Boolean isBinlog = false;
 
+    /**
+     * session timeout
+     */
+    private long timeout;
+
     public String getGroupId() {
         return groupId;
     }
@@ -99,6 +104,14 @@ public class ConsumerEndpoint {
 
     public void setBinlog(Boolean binlog) {
         isBinlog = binlog;
+    }
+
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
     }
 
     /**
