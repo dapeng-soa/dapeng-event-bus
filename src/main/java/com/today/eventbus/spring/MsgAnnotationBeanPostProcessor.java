@@ -237,6 +237,11 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
         endpoint.setKafkaHostKey(consumer.kafkaHostKey());
         // method annotation information
         endpoint.setSerializer(listener.serializer());
+        //session timeout
+        if (consumer.sessionTimeout() <= Constant.DEFAULT_SESSION_TIMEOUT) {
+            throw new RuntimeException("抛出该异常原因为: kafkaConsumer session 超时时间设置太小 ,请设置至少为 10000L 以上,单位为 ms(毫秒)");
+        }
+        endpoint.setTimeout(consumer.sessionTimeout());
 
         this.registrar.registerEndpoint(endpoint);
     }

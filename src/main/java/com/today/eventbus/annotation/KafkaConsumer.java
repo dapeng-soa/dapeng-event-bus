@@ -28,5 +28,8 @@ public @interface KafkaConsumer {
      */
     String kafkaHostKey() default Constant.DEFAULT_CONSUMER_HOST_KEY;
 
-
+    /**
+     * session.time.out 会话超时时间
+     */
+    long sessionTimeout() default 10000L;
 }

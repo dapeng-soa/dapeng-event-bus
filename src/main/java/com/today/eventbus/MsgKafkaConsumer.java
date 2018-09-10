@@ -7,10 +7,12 @@ import com.github.dapeng.core.helper.DapengUtil;
 import com.github.dapeng.core.helper.SoaSystemEnvProperties;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.today.eventbus.common.MsgConsumer;
+import com.today.eventbus.utils.Constant;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.MDC;
@@ -19,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
 
+
 /**
  * 描述: msg 消息 kafkaConsumer
  *
@@ -26,36 +29,45 @@ import java.util.Properties;
  * @since 2018年03月02日 上午1:38
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
+    /**
+     * session timeout
+     */
+    private final long timeout;
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...
      * @param groupId
      * @param topic
+     * @param timeout
      */
-    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic) {
+    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic, long timeout) {
         super(kafkaHost, groupId, topic);
+        this.timeout = timeout;
     }
 
     @Override
     protected void init() {
-        logger.info("[KafkaConsumer] [init] " +
-                "kafkaConnect(" + kafkaConnect +
-                ") groupId(" + groupId +
-                ") topic(" + topic + ")");
+        logger.info("[MsgKafkaConsumer] init. kafkaConnect({}), groupId({}), topic({}), timeout:({})",
+                kafkaConnect, groupId, topic, timeout);
 
         KafkaConfigBuilder.ConsumerConfiguration builder = KafkaConfigBuilder.defaultConsumer();
 
-        final Properties props = builder.bootstrapServers(kafkaConnect)
+        Properties props = builder.bootstrapServers(kafkaConnect)
                 .group(groupId)
                 .withKeyDeserializer(KafkaLongDeserializer.class)
                 .withValueDeserializer(ByteArrayDeserializer.class)
-                .withOffsetCommitted("false")
-                .withIsolation("read_committed")
-//                .withSessionTimeOut("10000")
-                .excludeInternalTopic("false")
-                .maxPollSize("50")
+                .withOffsetCommitted(false)
+                .excludeInternalTopic(false)
+                .withIsolation(Constant.ISOLATION_LEVEL)
+                .maxPollSize(Constant.MAX_POLL_SIZE)
                 .build();
 
+        //增加 session.timeout 的配置
+        if (timeout > Constant.DEFAULT_SESSION_TIMEOUT) {
+            long heartbeat = timeout / 3;
+            props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, timeout);
+            props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeat);
+        }
         consumer = new KafkaConsumer<>(props);
     }
 
