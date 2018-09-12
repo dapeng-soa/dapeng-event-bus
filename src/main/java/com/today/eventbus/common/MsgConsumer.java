@@ -159,7 +159,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         logger.error("[" + getClass().getSimpleName() + "]::[TargetException]:" + target.getClass(), target.getMessage());
 
         if (target instanceof SoaException) {
-            logger.error("[" + getClass().getSimpleName() + "]::[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage(), target);
+            //业务异常不打印堆栈.
+            logger.error("[" + getClass().getSimpleName() + "]::[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage());
             return;
         }
         throw new SoaException("deal message failed, throws: " + target.getMessage(), methodName);
