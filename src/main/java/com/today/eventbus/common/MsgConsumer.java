@@ -4,6 +4,7 @@ import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.today.eventbus.common.retry.RetryStrategy;
+import com.today.eventbus.utils.Constant;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -32,6 +33,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     private List<ENDPOINT> bizConsumers = new ArrayList<>();
 
+    /**
+     * session timeout
+     */
+    protected int timeout = Constant.DEFAULT_SESSION_TIMEOUT;
+
     protected String groupId;
 
     protected String topic;
@@ -48,6 +54,16 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
+        init();
+        beginRetry();
+        isRunning = true;
+    }
+
+    public MsgConsumer(String kafkaHost, String groupId, String topic, int timeout) {
+        this.kafkaConnect = kafkaHost;
+        this.groupId = groupId;
+        this.topic = topic;
+        this.timeout = timeout;
         init();
         beginRetry();
         isRunning = true;

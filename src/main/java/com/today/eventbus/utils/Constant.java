@@ -15,4 +15,18 @@ public interface Constant {
     String DEFAULT_EVENT_LOCK_TABLE_NAME = "dp_event_lock";
 
     String KAFKA_LISTENER_REGISTRAR_BEAN_NAME = "kafkaListenerRegistrar";
+    /**
+     * ms
+     */
+    int DEFAULT_SESSION_TIMEOUT = 10000;
+
+    /**
+     * per poll max message size
+     */
+    String MAX_POLL_SIZE = "50";
+
+    /**
+     * isolation
+     */
+    String ISOLATION_LEVEL = "read_committed";
 }
