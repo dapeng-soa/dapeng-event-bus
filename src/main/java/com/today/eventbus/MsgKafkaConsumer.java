@@ -75,7 +75,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
      * process message
      */
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] message) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] message, Long keyId) throws SoaException {
         logger.debug("[{}]:[BEGIN] 开始处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
@@ -98,8 +98,8 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             long sessionTid = DapengUtil.generateTid();
             invocationCtx.sessionTid(sessionTid);
             MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
-            logger.info("[{}]<->[开始处理消息]: method {}, groupId: {}, topic: {}, bean: {}",
-                    getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+            logger.info("[{}]<->[开始处理消息,消息KEY(唯一ID):{}]: method {}, groupId: {}, topic: {}, bean: {}",
+                    keyId, getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
 
             byte[] eventBinary = processor.getEventBinary();
 

@@ -125,7 +125,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                                 record.topic(), record.partition(), record.offset());
                         try {
                             for (ENDPOINT bizConsumer : bizConsumers) {
-                                dealMessage(bizConsumer, record.value());
+                                dealMessage(bizConsumer, record.value(), record.key());
                             }
                         } catch (Exception e) {
                             logger.error(getClass().getSimpleName() + "::[订阅消息处理失败]: " + e.getMessage(), e);
@@ -193,7 +193,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                         /**
                          * 将每一条重试逻辑放入新的线程中
                          */
-                        executor.execute(() -> retryStrategy.execute(() -> dealMessage(endpoint, record.value())));
+                        executor.execute(() -> retryStrategy.execute(() -> dealMessage(endpoint, record.value(), record.key())));
                     }
                     logger.info("retry result {} \r\n", record);
                 } catch (InterruptedException e) {
@@ -231,7 +231,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
      * @param value
      * @throws TException SoaException 是其子类 受检异常
      */
-    protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value) throws TException;
+    protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value, KEY key) throws TException;
 
     /**
      * 初始化 consumer

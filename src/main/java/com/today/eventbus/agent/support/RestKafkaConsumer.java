@@ -84,7 +84,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
 
     @Override
-    protected void dealMessage(BizConsumer bizConsumer, byte[] value) throws TException {
+    protected void dealMessage(BizConsumer bizConsumer, byte[] value, Long keyId) throws TException {
         OptimizedMetadata.OptimizedService service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
             logger.warn("元数据信息service为空，未能获取到元数据!!!");
@@ -141,8 +141,8 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
             if (postResult.getCode() == HttpStatus.SC_OK) {
                 String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
 
-                logger.info("[HttpClient]:response code: {}, event:{}, url:{},event内容:{}",
-                        response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
+                logger.info("[HttpClient]:消息ID: {}, response code: {}, event:{}, url:{},event内容:{}",
+                        keyId, response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
             } else {
                 //重试
                 logger.warn("[HttpClient]:调用远程url: {} 失败,进行重试。http code: {},topic:{},event:{},event内容:{}",
