@@ -41,7 +41,6 @@ trait AbstractEventBus {
     * 持久化 event 消息 to database
     *
     * @param event
-    * @throws
     */
   @throws[TException]
   private def persistenceEvent(event: Any): Unit = {
