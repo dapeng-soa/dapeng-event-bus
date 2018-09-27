@@ -54,7 +54,7 @@ trait AbstractEventBus {
     val executeSql = sql"INSERT INTO  dp_common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
     dataSource.executeUpdate(executeSql)
 
-    logger.info("save message successful ")
+    logger.info(s"save message unique id: $id successful ")
   }
 
   /**
