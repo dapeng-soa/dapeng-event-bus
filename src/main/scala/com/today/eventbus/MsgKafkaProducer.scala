@@ -87,9 +87,15 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
       logger.info(s"bizProducer:message eventType: ${eventMessage.map(_.eventType).toString}")
     } catch {
       case e: Exception =>
-        producer.abortTransaction()
         logger.error(e.getMessage, e)
         logger.error("send message failed,topic: {}", topic)
+        try {
+          producer.abortTransaction()
+        } catch {
+          case e: Exception =>
+            logger.error(s"abortTransaction Error: ${e.getMessage}", e)
+            throw e
+        }
         throw e
     }
   }
