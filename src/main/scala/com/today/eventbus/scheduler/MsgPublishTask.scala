@@ -85,7 +85,7 @@ class MsgPublishTask(topic: String,
         val logPeriod = scheduledCount.incrementAndGet()
 
         if (logPeriod == scheduledLoop) {
-          logger.info(s"定时线程 logger 间隔: [${logPeriod}] 轮记录日志,publishTask节点是否为master:[${MasterHelper.isMaster(serviceName, versionName)}]")
+          logger.info(s"定时线程 logger 间隔: [$logPeriod] 轮记录日志,publishTask节点是否为master:[${MasterHelper.isMaster(serviceName, versionName)}]")
           scheduledCount.set(0)
         }
 
@@ -127,7 +127,7 @@ class MsgPublishTask(topic: String,
     val logPeriod = logCount.incrementAndGet()
 
     if (logPeriod == logWhileLoop) {
-      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::开始轮询数据库消息....")
+      logger.info(s"[scheduled logger 间隔: $logPeriod]::开始轮询数据库消息....")
     }
 
     // 消息总条数计数器

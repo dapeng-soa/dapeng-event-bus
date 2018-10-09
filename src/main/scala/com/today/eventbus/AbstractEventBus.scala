@@ -1,11 +1,13 @@
 package com.today.eventbus
 
 import java.lang.reflect.Field
-import javax.sql.DataSource
+import java.sql.Connection
 
+import javax.sql.DataSource
 import com.github.dapeng.org.apache.thrift.TException
 import com.today.eventbus.serializer.KafkaMessageProcessor
 import org.slf4j.LoggerFactory
+
 import scala.beans.BeanProperty
 import wangzx.scala_commons.sql._
 
@@ -23,11 +25,24 @@ trait AbstractEventBus {
   @BeanProperty
   var dataSource: DataSource = _
 
-
-  @throws[TException]
+  /**
+    * fire a event
+    *
+    * @param event
+    */
   def fireEvent(event: Any): Unit = {
     dispatchEvent(event)
     persistenceEvent(event)
+  }
+
+  /**
+    * fire a event with manually
+    *
+    * @param event
+    */
+  def fireEventManually(event: Any, conn: Connection): Unit = {
+    dispatchEvent(event)
+    persistenceEventManually(event, conn)
   }
 
   /**
@@ -54,6 +69,27 @@ trait AbstractEventBus {
     dataSource.executeUpdate(executeSql)
 
     logger.info(s"save message unique id: $id successful ")
+  }
+
+  /**
+    * 使用传入的 conn 对消息进行存储
+    *
+    * @param event
+    * @param conn
+    * @throws
+    */
+  @throws[TException]
+  private def persistenceEventManually(event: Any, conn: Connection): Unit = {
+    logger.info("prepare to save event message with manually connection")
+    val processor = new KafkaMessageProcessor[Any]
+    val bytes: Array[Byte] = processor.encodeMessage(event)
+    val eventType = event.getClass.getName
+    // fetch id
+    val id = getMsgId(event)
+    val executeSql = sql"INSERT INTO  dp_common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
+    conn.executeUpdate(executeSql)
+
+    logger.info(s"save message unique id: $id successful with manually connection")
   }
 
   /**
