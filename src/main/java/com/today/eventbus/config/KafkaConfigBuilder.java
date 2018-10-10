@@ -196,7 +196,7 @@ public abstract class KafkaConfigBuilder {
          * @param flag
          * @return
          */
-        public ProducerConfiguration withIdempotence(String flag) {
+        public ProducerConfiguration withIdempotence(boolean flag) {
             properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, flag);
             return this;
         }

@@ -33,7 +33,7 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
       .withValueSerializer(classOf[ByteArraySerializer])
       .bootstrapServers(serverHost)
       .withTransactions(transId)
-      .withIdempotence("true") //幂等性保证
+      .withIdempotence(true) //幂等性保证
       .build
 
     producer = new KafkaProducer[Long, Array[Byte]](properties)
