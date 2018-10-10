@@ -38,6 +38,8 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
 
     producer = new KafkaProducer[Long, Array[Byte]](properties)
     producer.initTransactions()
+
+    logger.warn("kafka transaction producer is started successful with transID: " + transId)
   }
 
   def send(topic: String, id: Long, msg: Array[Byte]): Unit = {
@@ -97,6 +99,14 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
         }
         throw e
     }
+  }
+
+  /**
+    * 关闭生产者
+    */
+  def closeTransProducer(): Unit = {
+    producer.close()
+    logger.info("<======== shutdown KafkaProducer successful =========>")
   }
 
 }
