@@ -74,7 +74,7 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
         producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
           if (exception != null) {
             logger.error(
-              s"""MsgKafkaProducer <--> batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+              s"""msgKafkaProducer: batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
             throw exception
           } else {
             logger.debug(s"发送消息,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}")
@@ -84,7 +84,6 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
       producer.commitTransaction()
 
       logger.info(s"bizProducer:批量发送消息 id:(${eventMessage.map(_.id).toString}),size:[${eventMessage.size}]  to kafka broker successful")
-      logger.info(s"bizProducer:message eventType: ${eventMessage.map(_.eventType).toString}")
     } catch {
       case e: Exception =>
         logger.error(e.getMessage, e)

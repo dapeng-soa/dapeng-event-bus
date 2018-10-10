@@ -59,7 +59,6 @@ trait AbstractEventBus {
     */
   @throws[TException]
   private def persistenceEvent(event: Any): Unit = {
-    logger.info("prepare to save event message")
     val processor = new KafkaMessageProcessor[Any]
     val bytes: Array[Byte] = processor.encodeMessage(event)
     val eventType = event.getClass.getName
@@ -68,7 +67,7 @@ trait AbstractEventBus {
     val executeSql = sql"INSERT INTO  dp_common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
     dataSource.executeUpdate(executeSql)
 
-    logger.info(s"save message unique id: $id successful ")
+    logger.info(s"save message unique id: $id, eventType: $eventType successful ")
   }
 
   /**
@@ -89,7 +88,7 @@ trait AbstractEventBus {
     val executeSql = sql"INSERT INTO  dp_common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
     conn.executeUpdate(executeSql)
 
-    logger.info(s"save message unique id: $id successful with manually connection")
+    logger.info(s"save message unique id: $id, eventType: $eventType  successful with manually connection")
   }
 
   /**
