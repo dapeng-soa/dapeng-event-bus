@@ -11,6 +11,7 @@ import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
 import org.slf4j.LoggerFactory
 import com.today.eventbus.scheduler.ScalaSql._
+import org.apache.kafka.common.KafkaException
 import org.springframework.beans.factory.DisposableBean
 import wangzx.scala_commons.sql._
 
@@ -31,24 +32,49 @@ class MsgPublishTask(topic: String,
 
   private val logger = LoggerFactory.getLogger(classOf[MsgPublishTask])
 
-  //transId: kafka消息对事务的支持前提，需要每一个生产者实例有不同的事务ID，全局唯一
+  /**
+    * transId: kafka消息对事务的支持前提，需要每一个生产者实例有不同的事务ID，全局唯一
+    */
   private val tid = tidPrefix + UUID.randomUUID().toString
-  private val producer = new MsgKafkaProducer(kafkaHost, tid)
-  logger.warn("Kafka producer transactionId:" + tid)
-
+  /**
+    * kafka 生产者初始化
+    */
+  private var producer: MsgKafkaProducer = initTransProducer(kafkaHost, tid)
+  /**
+    * 轮询间隔时间，根据环境变量指定，默认 300ms
+    */
   private val period = SysEnvUtil.SOA_EVENTBUS_PERIOD.toLong
-  private val initialDelay = 1000
   logger.warn("Kafka producer fetch message period :" + period)
+  /**
+    * 初始化延迟时间 1s
+    */
+  private val initialDelay = 1000
 
   private val logCount = new AtomicInteger(0)
-  //每轮询100次，log一次日志
+  /**
+    * 每轮询100次，log一次日志
+    */
   private val logWhileLoop = 100
 
   private val scheduledCount = new AtomicInteger(0)
   private val scheduledLoop = 500
 
+  /**
+    * 初始化 producer 生产者
+    *
+    * @param host
+    * @param tid
+    * @return
+    */
+  private def initTransProducer(host: String, tid: String): MsgKafkaProducer = {
+    new MsgKafkaProducer(kafkaHost, tid)
+  }
 
-  //----------------------------- master模式，只有master进行轮询 ---------
+
+  /**
+    * master模式，只有master进行轮询
+    * 根据 serviceName 进行节点 master 选举
+    */
   @BeanProperty
   var serviceName: String = null
 
@@ -72,11 +98,7 @@ class MsgPublishTask(topic: String,
   def startScheduled(): Unit = {
     if (serviceName == null) {
       schedulerPublisher.scheduleAtFixedRate(() => {
-        try {
-          doPublishMessagesAsync()
-        } catch {
-          case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
-        }
+        publishMessagesAsyncWithException()
       }, initialDelay, period, TimeUnit.MILLISECONDS)
 
     } else {
@@ -88,39 +110,33 @@ class MsgPublishTask(topic: String,
           logger.info(s"定时线程 logger 间隔: [$logPeriod] 轮记录日志,publishTask节点是否为master:[${MasterHelper.isMaster(serviceName, versionName)}]")
           scheduledCount.set(0)
         }
-
         //判断为master才执行
         if (MasterHelper.isMaster(serviceName, versionName)) {
-          try {
-            doPublishMessagesAsync()
-          } catch {
-            case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
-          }
+          publishMessagesAsyncWithException()
         }
       }, initialDelay, period, TimeUnit.MILLISECONDS)
-
     }
-
   }
 
   /**
-    * 基于jdk定时线程池,处理消息轮询发送....
+    * 执行异步发送消息到 kafka broker, 出现异常会进行捕获
     */
-  def startScheduledSync(): Unit = {
-    schedulerPublisher.scheduleAtFixedRate(() => {
-      try {
-        doPublishMessagesSync()
-      } catch {
-        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+  def publishMessagesAsyncWithException(): Unit = {
+    try {
+      doPublishMessagesAsync()
+    } catch {
+      case e: KafkaException => {
+        logger.error(s"eventBus: 生产者发送出现KafkaException,准备重启生产者。具体异常: ${e.getMessage}", e)
+        producer.closeTransProducer()
+        producer = initTransProducer(kafkaHost, tid)
       }
-
-    }, initialDelay, period, TimeUnit.MILLISECONDS)
-
+      case e: Exception => logger.error(s"eventBus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+    }
   }
 
 
   /**
-    * 批量删除并发送消息
+    * 采用kafka 异步发送消息的模式，批量轮询数据库消息并发送
     */
   def doPublishMessagesAsync(): Unit = {
     // log日志多久打印一次
@@ -141,11 +157,12 @@ class MsgPublishTask(topic: String,
     //id: 作用是不锁住全表，获取消息时不会影响插入 uniqueId
     do {
       resultSetCounter.set(0)
+      //事务控制
       withTransaction(dataSource)(conn => {
         val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
 
         if (logPeriod == logWhileLoop) {
-          logger.info(s"[scheduled logger 间隔: ${logPeriod}]::获得dp_event_lock锁:${lockRow},开始查询消息表dp_common_event")
+          logger.info(s"[scheduled logger 间隔: $logPeriod]::获得dp_event_lock锁:$lockRow,开始查询消息表dp_common_event")
         }
 
         val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
@@ -183,12 +200,28 @@ class MsgPublishTask(topic: String,
 
 
   /**
+    * 基于jdk定时线程池,处理消息轮询发送....
+    */
+  def startScheduledSync(): Unit = {
+    schedulerPublisher.scheduleAtFixedRate(() => {
+      try {
+        doPublishMessagesSync()
+      } catch {
+        case e: Exception => logger.error(s"eventbus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+      }
+
+    }, initialDelay, period, TimeUnit.MILLISECONDS)
+
+  }
+
+
+  /**
     * fetch message from database , then send to kafka broker
     */
   def doPublishMessagesSync(): Unit = {
     val logPeriod = logCount.incrementAndGet()
     if (logPeriod == logWhileLoop) {
-      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::begin to publish messages to kafka")
+      logger.info(s"[scheduled logger 间隔: $logPeriod]::begin to publish messages to kafka")
     }
 
     // 消息总条数计数器

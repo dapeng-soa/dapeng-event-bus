@@ -44,7 +44,10 @@ libraryDependencies ++= Seq(
   "com.github.dapeng" % "dapeng-open-api" % "2.0.5",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
   "org.simpleframework" % "simple-xml" % "2.7.1",
-  "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE"
+  "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE",
+  // https://mvnrepository.com/artifact/mysql/mysql-connector-java
+  "mysql" % "mysql-connector-java" % "5.1.47" % Test
+
 )
 
 javacOptions ++= Seq("-encoding", "UTF-8")
