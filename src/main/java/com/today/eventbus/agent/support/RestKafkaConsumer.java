@@ -170,6 +170,8 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                     }
                 });
             }
+        } else {
+            logger.debug("不解析当前消息，eventType:{},bizEvent:{}", eventType, bizConsumer.getEvent());
         }
     }
 
