@@ -28,7 +28,7 @@ trait AbstractEventBus {
   /**
     * fire a event
     *
-    * @param event
+    * @param event biz custom event
     */
   def fireEvent(event: Any): Unit = {
     dispatchEvent(event)
@@ -38,7 +38,8 @@ trait AbstractEventBus {
   /**
     * fire a event with manually
     *
-    * @param event
+    * @param event biz custom event
+    * @param conn  biz custom conn
     */
   def fireEventManually(event: Any, conn: Connection): Unit = {
     dispatchEvent(event)
@@ -48,14 +49,14 @@ trait AbstractEventBus {
   /**
     * 业务系统处理事件分发逻辑
     *
-    * @param event
+    * @param event biz custom event
     */
   protected def dispatchEvent(event: Any): Unit
 
   /**
     * 持久化 event 消息 to database
     *
-    * @param event
+    * @param event biz custom event
     */
   @throws[TException]
   private def persistenceEvent(event: Any): Unit = {
