@@ -25,6 +25,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
@@ -84,7 +85,10 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
 
     @Override
-    protected void dealMessage(BizConsumer bizConsumer, byte[] value, Long keyId) throws TException {
+    protected void dealMessage(BizConsumer bizConsumer, ConsumerRecord<Long, byte[]> record) throws TException {
+        Long keyId = record.key();
+        byte[] value = record.value();
+
         OptimizedMetadata.OptimizedService service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
             logger.warn("元数据信息service为空，未能获取到元数据!!!");

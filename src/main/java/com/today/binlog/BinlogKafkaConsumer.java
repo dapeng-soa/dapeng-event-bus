@@ -6,6 +6,7 @@ import com.today.eventbus.common.retry.BinlogRetryStrategy;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaIntDeserializer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
@@ -60,7 +61,10 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
 
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] value, Integer keyId) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, ConsumerRecord<Integer, byte[]> record) throws SoaException {
+        Integer keyId = record.key();
+        byte[] value = record.value();
+
         List<BinlogEvent> binlogEvents = BinlogMsgProcessor.process(value);
         // > 0 才处理
         if (binlogEvents.size() > 0) {
