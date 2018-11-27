@@ -68,7 +68,8 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
                 if (EVENT_CONSUMERS.containsKey(consumerKey)) {
                     EVENT_CONSUMERS.get(consumerKey).addConsumer(endpoint);
                 } else {
-                    MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost, groupId, topic, timeout);
+                    MsgKafkaConsumer consumer = new MsgKafkaConsumer(kafkaHost, groupId, topic, timeout,
+                            endpoint.getMaxAttempts(), endpoint.getRetryInterval());
                     consumer.addConsumer(endpoint);
                     EVENT_CONSUMERS.put(consumerKey, consumer);
                 }
