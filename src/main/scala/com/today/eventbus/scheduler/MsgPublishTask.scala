@@ -248,7 +248,11 @@ class MsgPublishTask(topic: String,
           val result: Int = executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${event.id}")
 
           if (result == 1) {
-            producer.send(topic, event.id, event.eventBinary)
+            val recordKey = event.eventBiz match {
+              case Some(value) ⇒ value.hashCode.toLong
+              case None ⇒ event.id
+            }
+            producer.send(topic, recordKey, event.eventBinary)
             counter.incrementAndGet()
           }
           resultSetCounter.incrementAndGet()

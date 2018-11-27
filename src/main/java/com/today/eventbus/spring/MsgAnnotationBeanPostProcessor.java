@@ -4,6 +4,8 @@ import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.annotation.BinlogListener;
 import com.today.eventbus.annotation.KafkaConsumer;
 import com.today.eventbus.annotation.KafkaListener;
+import com.today.eventbus.common.ConsumerContext;
+import com.today.eventbus.utils.EventBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
@@ -22,6 +24,7 @@ import org.springframework.util.ReflectionUtils;
 import com.today.eventbus.utils.Constant;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
 
 
@@ -229,6 +232,10 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
         Method methodToUse = checkProxy(method, bean);
         ConsumerEndpoint endpoint = new ConsumerEndpoint();
         endpoint.setMethod(methodToUse);
+        //since 3.0
+        //determine custom listener method has consumer context parameter or not.
+        determineInvocationParameter(endpoint, methodToUse);
+        //consumer bean
         endpoint.setBean(bean);
         endpoint.setParameterTypes(Arrays.asList(method.getParameterTypes()));
         // class annotation information
@@ -237,6 +244,7 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
         endpoint.setKafkaHostKey(consumer.kafkaHostKey());
         // method annotation information
         endpoint.setSerializer(listener.serializer());
+
         //session timeout
         if (consumer.sessionTimeout() < Constant.DEFAULT_SESSION_TIMEOUT) {
             throw new RuntimeException("抛出该异常原因为: kafkaConsumer session 超时时间设置太小 ,请设置至少为 10000L 以上,单位为 ms(毫秒)");
@@ -299,6 +307,25 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
             }
         }
         return method;
+    }
+
+    /**
+     * 方法是否含有 ConsumerContext
+     *
+     * @param endpoint
+     * @param invokeMethod
+     */
+    private void determineInvocationParameter(ConsumerEndpoint endpoint, Method invokeMethod) {
+        Parameter[] parameters = invokeMethod.getParameters();
+        if (parameters.length == 2 && ConsumerContext.class.isAssignableFrom(parameters[0].getType())) {
+            endpoint.setHasConsumerMetaData(true);
+        } else if (parameters.length == 1) {
+            endpoint.setHasConsumerMetaData(false);
+        } else {
+            throw new EventBusException("@KafkaListener 注解的监听的方法不符合规范,请参考:" +
+                    "(1). void listener(ConsumerContext context, DemoEvent event) 或者 " +
+                    "(2). void listener(DemoEvent event) 的形式配置消费者监听方法");
+        }
     }
 
     @Override

@@ -32,6 +32,10 @@ public class ConsumerEndpoint {
     private String kafkaHostKey;
 
     private Boolean isBinlog = false;
+    /**
+     * 用户自定义的监听方法是否带有Consumer 上下文元信息。
+     */
+    private Boolean hasConsumerMetaData;
 
     /**
      * session timeout
@@ -137,5 +141,13 @@ public class ConsumerEndpoint {
 
     public void setKafkaHostKey(String kafkaHostKey) {
         this.kafkaHostKey = kafkaHostKey;
+    }
+
+    public Boolean getHasConsumerMetaData() {
+        return hasConsumerMetaData;
+    }
+
+    public void setHasConsumerMetaData(Boolean hasConsumerMetaData) {
+        this.hasConsumerMetaData = hasConsumerMetaData;
     }
 }

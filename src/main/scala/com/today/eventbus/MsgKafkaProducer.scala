@@ -42,17 +42,17 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
     logger.warn("kafka transaction producer is started successful with transID: " + transId)
   }
 
-  def send(topic: String, id: Long, msg: Array[Byte]): Unit = {
+  def send(topic: String, recordKey: Long, msg: Array[Byte]): Unit = {
     try {
       producer.beginTransaction()
 
-      val metadata: RecordMetadata = producer.send(new ProducerRecord[Long, Array[Byte]](topic, id, msg)).get()
+      val metadata: RecordMetadata = producer.send(new ProducerRecord[Long, Array[Byte]](topic, recordKey, msg)).get()
 
       producer.commitTransaction()
 
       logger.info(
         s"""in transaction per msg ,send message to broker successful,
-        id: ${id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+           |recordKey: $recordKey, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""".stripMargin)
 
     } catch {
       case e: Exception =>
@@ -65,26 +65,29 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
 
   /**
     * batch to send message , if one is failed ,all batch message will  rollback.
-    *
-    * @param topic
-    * @param eventMessage
     */
   def batchSend(topic: String, eventMessage: List[EventStore]): Unit = {
     try {
       producer.beginTransaction()
-      eventMessage.foreach((eventStore: EventStore) => {
-        producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
+      eventMessage.foreach((eventStore: EventStore) ⇒ {
+        val recordKey = eventStore.eventBiz match {
+          case Some(value) ⇒ value.hashCode.toLong
+          case None ⇒ eventStore.id
+        }
+        producer.send(new ProducerRecord[Long, Array[Byte]](topic, recordKey, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
           if (exception != null) {
             logger.error(
-              s"""msgKafkaProducer: batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
+              s"""生产者批量发送消息失败当前失败记录,id: ${eventStore.id}, recordKey: $recordKey,
+                 | topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""".stripMargin)
             throw exception
           } else {
-            logger.debug(s"发送消息,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}")
+            if (logger.isDebugEnabled()) {
+              logger.debug(s"发送消息,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}")
+            }
           }
         })
       })
       producer.commitTransaction()
-
       logger.info(s"bizProducer:批量发送消息 id:(${eventMessage.map(_.id).toString}),size:[${eventMessage.size}]  to kafka broker successful")
     } catch {
       case e: Exception =>

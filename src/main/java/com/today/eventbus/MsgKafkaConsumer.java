@@ -6,6 +6,7 @@ import com.github.dapeng.core.SoaException;
 import com.github.dapeng.core.helper.DapengUtil;
 import com.github.dapeng.core.helper.SoaSystemEnvProperties;
 import com.github.dapeng.org.apache.thrift.TException;
+import com.today.eventbus.common.ConsumerContext;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.utils.Constant;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
@@ -13,11 +14,18 @@ import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.MDC;
+import org.springframework.core.MethodParameter;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Properties;
 
@@ -75,7 +83,10 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
      * process message
      */
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] message, Long keyId) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, ConsumerRecord<Long, byte[]> record) throws SoaException {
+        Long keyId = record.key();
+        byte[] message = record.value();
+
         logger.debug("[{}]:[BEGIN] 开始处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
@@ -105,9 +116,18 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
             try {
                 Object event = processor.decodeMessage(eventBinary, consumer.getEventSerializer());
-                consumer.getMethod().invoke(consumer.getBean(), event);
-                logger.info("[{}]<->[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
-                        getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+
+                //判断method参数数量...
+                if (consumer.getHasConsumerMetaData()) {
+                    ConsumerContext context = buildConsumerContext(record);
+                    consumer.getMethod().invoke(consumer.getBean(), context, event);
+                    logger.info("KafkaConsumer[处理消息结束]:method {}, groupId: {},context元信息:{}",
+                            consumer.getMethod().getName(), groupId, context.toString());
+                } else {
+                    consumer.getMethod().invoke(consumer.getBean(), event);
+                    logger.info("KafkaConsumer[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
+                            consumer.getMethod().getName(), groupId, topic, consumer.getBean());
+                }
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
             } catch (InvocationTargetException e) {
@@ -126,5 +146,13 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
         }
 
         logger.debug("[{}]:[END] 结束处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
+    }
+
+    /**
+     * 构造消费者上下文元信息...
+     */
+    private ConsumerContext buildConsumerContext(ConsumerRecord<Long, byte[]> record) {
+        return new ConsumerContext<>(record.key(), record.topic(), record.offset(), record.partition(),
+                record.timestamp(), record.timestampType().name);
     }
 }

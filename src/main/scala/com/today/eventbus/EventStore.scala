@@ -7,4 +7,4 @@ package com.today.eventbus
   * @author hz.lei
   * @since 2018年02月28日 下午2:50
   */
-case class EventStore(id: Long, eventType: String, eventBinary: Array[Byte])
+case class EventStore(id: Long, eventType: String, eventBiz: Option[String], eventBinary: Array[Byte])
