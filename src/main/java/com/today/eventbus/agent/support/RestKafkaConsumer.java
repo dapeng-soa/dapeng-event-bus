@@ -13,7 +13,7 @@ import com.today.eventbus.common.retry.DefaultRetryStrategy;
 import com.today.eventbus.config.KafkaConfigBuilder;
 import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
-import com.today.eventbus.utils.CharDecodeUtil;
+import com.today.eventbus.utils.CommonUtil;
 import com.today.eventbus.utils.Constant;
 import com.today.eventbus.utils.ResponseResult;
 import org.apache.http.HttpStatus;
@@ -143,7 +143,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
             ResponseResult postResult = post(bizConsumer.getDestinationUrl(), pairs);
 
             if (postResult.getCode() == HttpStatus.SC_OK) {
-                String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
+                String response = CommonUtil.decodeUnicode(postResult.getContent());
 
                 logger.info("[HttpClient]:消息ID: {}, response code: {}, event:{}, url:{},event内容:{}",
                         keyId, response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
@@ -165,7 +165,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                                 Thread.currentThread().getName(), bizConsumer.getDestinationUrl(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
                         threadResult = post(bizConsumer.getDestinationUrl(), pairs);
                         logger.info("重试返回结果:response code: {}, event:{}, url:{}",
-                                CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
+                                CommonUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
                     if (threadResult.getCode() == HttpStatus.SC_OK) {
                         logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);

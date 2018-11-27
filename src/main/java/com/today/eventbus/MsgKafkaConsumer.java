@@ -152,7 +152,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
      * 构造消费者上下文元信息...
      */
     private ConsumerContext buildConsumerContext(ConsumerRecord<Long, byte[]> record) {
-        return new ConsumerContext<>(record.key(), record.topic(), record.offset(), record.partition(),
+        return new ConsumerContext(record.key(), record.topic(), record.offset(), record.partition(),
                 record.timestamp(), record.timestampType().name);
     }
 }

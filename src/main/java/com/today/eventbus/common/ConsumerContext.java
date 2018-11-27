@@ -6,8 +6,8 @@ import com.today.eventbus.utils.CommonUtil;
  * @author <a href=mailto:leihuazhe@gmail.com>maple</a>
  * @since 2018-11-23 6:05 PM
  */
-public class ConsumerContext<K> {
-    private final K key;
+public class ConsumerContext {
+    private final long key;
     private final String topic;
     private final long offset;
     private final int partition;
@@ -15,7 +15,7 @@ public class ConsumerContext<K> {
     private final String timeFormat;
     private final String timestampType;
 
-    public ConsumerContext(K key, String topic, long offset, int partition, long timestamp, String timestampType) {
+    public ConsumerContext(long key, String topic, long offset, int partition, long timestamp, String timestampType) {
         this.key = key;
         this.topic = topic;
         this.offset = offset;
@@ -25,7 +25,7 @@ public class ConsumerContext<K> {
         this.timestampType = timestampType;
     }
 
-    public K getKey() {
+    public long getKey() {
         return key;
     }
 
