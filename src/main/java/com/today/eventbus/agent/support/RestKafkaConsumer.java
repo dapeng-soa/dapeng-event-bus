@@ -275,6 +275,6 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
      */
     @Override
     protected void buildRetryStrategy() {
-        retryStrategy = new DefaultRetryStrategy();
+        retryStrategy = new DefaultRetryStrategy(maxAttempts, retryInterval);
     }
 }

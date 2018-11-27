@@ -1,5 +1,6 @@
 package com.today.eventbus.common.retry;
 
+import com.today.eventbus.utils.Constant;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
@@ -14,6 +15,19 @@ import java.util.Collections;
  * @since 2018年05月09日 下午2:41
  */
 public class DefaultRetryStrategy extends RetryStrategy {
+    /**
+     * 重试次数...
+     */
+    private final int maxAttempts;
+    /**
+     * 重试间隔时间
+     */
+    private final int retryInterval;
+
+    public DefaultRetryStrategy(int maxAttempts, int retryInterval) {
+        this.maxAttempts = maxAttempts;
+        this.retryInterval = retryInterval;
+    }
 
     /**
      * 默认 SimpleRetryPolicy 策略
@@ -25,8 +39,7 @@ public class DefaultRetryStrategy extends RetryStrategy {
      */
     @Override
     protected RetryPolicy createRetryPolicy() {
-        SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy(4, Collections.singletonMap(Exception.class, true));
-        return simpleRetryPolicy;
+        return new SimpleRetryPolicy(maxAttempts, Collections.singletonMap(Exception.class, true));
     }
 
     /**
@@ -45,7 +58,7 @@ public class DefaultRetryStrategy extends RetryStrategy {
     @Override
     protected BackOffPolicy createBackOffPolicy() {
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-        backOffPolicy.setInitialInterval(4000);
+        backOffPolicy.setInitialInterval(retryInterval);
         backOffPolicy.setMultiplier(4);
         return backOffPolicy;
     }

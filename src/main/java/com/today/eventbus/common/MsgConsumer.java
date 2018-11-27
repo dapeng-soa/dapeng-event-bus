@@ -47,6 +47,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     protected KafkaConsumer<KEY, VALUE> consumer;
 
     protected RetryStrategy retryStrategy;
+    /**
+     * 重试次数...
+     */
+    protected int maxAttempts = Constant.DEFAULT_MAX_ATTEMPTS;
+    /**
+     * 重试间隔时间
+     */
+    protected int retryInterval = Constant.DEFAULT_RETRY_INTERVAL;
 
     private volatile boolean isRunning;
 
@@ -59,11 +67,13 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         isRunning = true;
     }
 
-    public MsgConsumer(String kafkaHost, String groupId, String topic, int timeout) {
+    public MsgConsumer(String kafkaHost, String groupId, String topic, int timeout, int maxAttempts, int retryInterval) {
         this.kafkaConnect = kafkaHost;
         this.groupId = groupId;
         this.topic = topic;
         this.timeout = timeout;
+        this.maxAttempts = maxAttempts;
+        this.retryInterval = retryInterval;
         init();
         beginRetry();
         isRunning = true;

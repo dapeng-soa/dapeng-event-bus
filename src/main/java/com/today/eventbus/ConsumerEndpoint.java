@@ -42,6 +42,17 @@ public class ConsumerEndpoint {
      */
     private int timeout;
 
+    /**
+     * 最大重试次数
+     */
+    private int maxAttempts;
+
+    /**
+     * 重试间隔时间
+     */
+    private int retryInterval;
+
+
     public String getGroupId() {
         return groupId;
     }
@@ -149,5 +160,21 @@ public class ConsumerEndpoint {
 
     public void setHasConsumerMetaData(Boolean hasConsumerMetaData) {
         this.hasConsumerMetaData = hasConsumerMetaData;
+    }
+
+    public int getMaxAttempts() {
+        return maxAttempts;
+    }
+
+    public void setMaxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts;
+    }
+
+    public int getRetryInterval() {
+        return retryInterval;
+    }
+
+    public void setRetryInterval(int retryInterval) {
+        this.retryInterval = retryInterval;
     }
 }

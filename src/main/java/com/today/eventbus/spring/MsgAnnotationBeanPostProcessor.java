@@ -251,6 +251,13 @@ public class MsgAnnotationBeanPostProcessor implements BeanPostProcessor, BeanFa
         }
         endpoint.setTimeout(consumer.sessionTimeout());
 
+        // custom retry information, such as max retry attempts , retry interval and so on.
+        int maxAttempts = consumer.maxAttempts() > Constant.DEFAULT_MAX_ATTEMPTS ? consumer.maxAttempts() : Constant.DEFAULT_MAX_ATTEMPTS;
+        int retryInterval = consumer.retryInterval() > Constant.DEFAULT_RETRY_INTERVAL ? consumer.retryInterval() : Constant.DEFAULT_RETRY_INTERVAL;
+        // need check
+        endpoint.setMaxAttempts(maxAttempts);
+        endpoint.setRetryInterval(retryInterval);
+
         this.registrar.registerEndpoint(endpoint);
     }
 

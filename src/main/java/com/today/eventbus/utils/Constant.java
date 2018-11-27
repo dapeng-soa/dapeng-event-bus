@@ -29,4 +29,15 @@ public interface Constant {
      * isolation
      */
     String ISOLATION_LEVEL = "read_committed";
+
+
+    /**
+     * 重试次数...
+     */
+    int DEFAULT_MAX_ATTEMPTS = 4;
+
+    /**
+     * 重试间隔时间
+     */
+    int DEFAULT_RETRY_INTERVAL = 4000;
 }

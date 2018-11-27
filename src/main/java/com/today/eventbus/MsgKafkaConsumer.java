@@ -16,16 +16,10 @@ import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.MDC;
-import org.springframework.core.MethodParameter;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Properties;
 
@@ -38,13 +32,15 @@ import java.util.Properties;
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
     /**
-     * @param kafkaHost host1:port1,host2:port2,...
-     * @param groupId
-     * @param topic
-     * @param timeout
+     * @param kafkaHost     host1:port1,host2:port2,...
+     * @param groupId       消费者组唯一标志
+     * @param topic         消费者订阅的主题
+     * @param timeout       kafka 消费者会话超时时间
+     * @param maxAttempts   重试最大次数
+     * @param retryInterval 重试策略的重试间隔
      */
-    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic, int timeout) {
-        super(kafkaHost, groupId, topic, timeout);
+    public MsgKafkaConsumer(String kafkaHost, String groupId, String topic, int timeout, int maxAttempts, int retryInterval) {
+        super(kafkaHost, groupId, topic, timeout, maxAttempts, retryInterval);
     }
 
     @Override
@@ -75,7 +71,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
     @Override
     protected void buildRetryStrategy() {
-        retryStrategy = new DefaultRetryStrategy();
+        retryStrategy = new DefaultRetryStrategy(maxAttempts, retryInterval);
     }
 
 

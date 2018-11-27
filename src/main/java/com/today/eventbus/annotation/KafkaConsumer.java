@@ -21,6 +21,16 @@ public @interface KafkaConsumer {
     String groupId();
 
     /**
+     * 重试次数...
+     */
+    int maxAttempts() default Constant.DEFAULT_MAX_ATTEMPTS;
+
+    /**
+     * 重试间隔时间
+     */
+    int retryInterval() default Constant.DEFAULT_RETRY_INTERVAL;
+
+    /**
      * hosts for kafka cluster,  users should set the real host by
      * System.setProperty(kafkaHostKey,"xxx") or export the env with the key.
      *
