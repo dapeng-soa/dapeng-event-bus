@@ -7,15 +7,15 @@ import com.today.eventbus.utils.CommonUtil;
  * @since 2018-11-23 6:05 PM
  */
 public class ConsumerContext {
-    private final long key;
+    private final Long key;
     private final String topic;
-    private final long offset;
-    private final int partition;
-    private final long timestamp;
+    private final Long offset;
+    private final Integer partition;
+    private final Long timestamp;
     private final String timeFormat;
     private final String timestampType;
 
-    public ConsumerContext(long key, String topic, long offset, int partition, long timestamp, String timestampType) {
+    public ConsumerContext(Long key, String topic, Long offset, Integer partition, Long timestamp, String timestampType) {
         this.key = key;
         this.topic = topic;
         this.offset = offset;
@@ -25,7 +25,7 @@ public class ConsumerContext {
         this.timestampType = timestampType;
     }
 
-    public long getKey() {
+    public Long getKey() {
         return key;
     }
 
@@ -33,15 +33,15 @@ public class ConsumerContext {
         return topic;
     }
 
-    public long getOffset() {
+    public Long getOffset() {
         return offset;
     }
 
-    public int getPartition() {
+    public Integer getPartition() {
         return partition;
     }
 
-    public long getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 

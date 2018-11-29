@@ -12,7 +12,10 @@ public class CommonUtil {
 
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss SSS");
 
-    public static String convertTimestamp(long timeStamp) {
+    public static String convertTimestamp(Long timeStamp) {
+        if (timeStamp == null) {
+            return "";
+        }
         return LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(formatter);
     }
 

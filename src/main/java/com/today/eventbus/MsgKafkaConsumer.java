@@ -16,6 +16,7 @@ import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.MDC;
 
@@ -148,7 +149,10 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
      * 构造消费者上下文元信息...
      */
     private ConsumerContext buildConsumerContext(ConsumerRecord<Long, byte[]> record) {
+        // if null
+        String timeType = record.timestampType() == null ? null : record.timestampType().name;
+
         return new ConsumerContext(record.key(), record.topic(), record.offset(), record.partition(),
-                record.timestamp(), record.timestampType().name);
+                record.timestamp(), timeType);
     }
 }
