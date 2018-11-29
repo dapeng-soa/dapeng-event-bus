@@ -34,10 +34,10 @@ public interface Constant {
     /**
      * 重试次数...
      */
-    int DEFAULT_MAX_ATTEMPTS = 4;
+    int DEFAULT_MAX_ATTEMPTS = 3;
 
     /**
      * 重试间隔时间
      */
-    int DEFAULT_RETRY_INTERVAL = 4000;
+    int DEFAULT_RETRY_INTERVAL = 2000;
 }

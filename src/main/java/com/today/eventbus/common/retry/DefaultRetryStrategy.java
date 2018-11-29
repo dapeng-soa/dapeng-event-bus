@@ -27,6 +27,7 @@ public class DefaultRetryStrategy extends RetryStrategy {
     public DefaultRetryStrategy(int maxAttempts, int retryInterval) {
         this.maxAttempts = maxAttempts;
         this.retryInterval = retryInterval;
+        init();
     }
 
     /**
@@ -59,7 +60,7 @@ public class DefaultRetryStrategy extends RetryStrategy {
     protected BackOffPolicy createBackOffPolicy() {
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
         backOffPolicy.setInitialInterval(retryInterval);
-        backOffPolicy.setMultiplier(4);
+        backOffPolicy.setMultiplier(2);
         return backOffPolicy;
     }
 

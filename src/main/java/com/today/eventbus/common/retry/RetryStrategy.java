@@ -21,6 +21,10 @@ public abstract class RetryStrategy {
     protected RetryTemplate retryTemplate;
 
     public RetryStrategy() {
+
+    }
+
+    protected void init() {
         retryTemplate = new RetryTemplate();
         retryTemplate.setRetryPolicy(createRetryPolicy());
         retryTemplate.setBackOffPolicy(createBackOffPolicy());
