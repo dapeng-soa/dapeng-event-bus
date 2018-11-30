@@ -1,5 +1,6 @@
 package com.today.eventbus.utils;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -16,7 +17,7 @@ public class CommonUtil {
         if (timeStamp == null) {
             return "";
         }
-        return LocalDateTime.now(ZoneId.of("Asia/Shanghai")).format(formatter);
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeStamp), ZoneId.of("Asia/Shanghai")).format(formatter);
     }
 
     public static String decodeUnicode(String theString) {
