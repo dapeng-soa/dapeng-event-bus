@@ -56,7 +56,7 @@ public abstract class KafkaConfigBuilder {
         final ConsumerConfiguration builder = new ConsumerConfiguration();
         builder.withKeyDeserializer(StringDeserializer.class);
         builder.withValueDeserializer(StringDeserializer.class);
-        builder.withClientId("Consumer-" + SysEnvUtil.SOA_CONTAINER_IP + "-" + UUID.randomUUID().toString());
+        builder.withClientId("Consumer-" + SysEnvUtil.HOST_IP + "-" + UUID.randomUUID().toString());
         fill(properties, builder.properties);
         return builder;
     }

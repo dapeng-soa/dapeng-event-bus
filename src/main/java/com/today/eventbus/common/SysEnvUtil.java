@@ -19,12 +19,12 @@ public class SysEnvUtil {
     /**
      * 当前环境容器IP
      */
-    private static final String KEY_SOA_CONTAINER_IP = "soa_container_ip";
+    private static final String KEY_HOST_IP = "host_ip";
 
 
     public static final String SOA_EVENTBUS_PERIOD = get(KEY_SOA_EVENTBUS_PERIOD, "300");
 
-    public static final String SOA_CONTAINER_IP = get(KEY_SOA_CONTAINER_IP, localIp());
+    public static final String HOST_IP = get(KEY_HOST_IP, localIp());
 
 
     public static String get(String key, String defaultValue) {
