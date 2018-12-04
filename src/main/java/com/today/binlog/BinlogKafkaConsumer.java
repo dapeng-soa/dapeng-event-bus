@@ -13,7 +13,6 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
  * 描述: 处理 binlog 缓存 监听 事件

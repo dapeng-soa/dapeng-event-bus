@@ -1,10 +1,6 @@
 package com.today.eventbus;
 
-import com.github.dapeng.core.InvocationContext;
-import com.github.dapeng.core.InvocationContextImpl;
 import com.github.dapeng.core.SoaException;
-import com.github.dapeng.core.helper.DapengUtil;
-import com.github.dapeng.core.helper.SoaSystemEnvProperties;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.today.eventbus.common.ConsumerContext;
 import com.today.eventbus.common.MsgConsumer;
@@ -16,9 +12,7 @@ import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.slf4j.MDC;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
