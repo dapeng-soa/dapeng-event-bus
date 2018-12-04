@@ -1,6 +1,10 @@
 package com.today.eventbus.common;
 
+import com.github.dapeng.core.InvocationContext;
+import com.github.dapeng.core.InvocationContextImpl;
 import com.github.dapeng.core.SoaException;
+import com.github.dapeng.core.helper.DapengUtil;
+import com.github.dapeng.core.helper.SoaSystemEnvProperties;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.today.eventbus.common.retry.RetryStrategy;
@@ -13,6 +17,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -126,6 +131,10 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
         while (isRunning) {
             try {
+                InvocationContext invocationContext = InvocationContextImpl.Factory.currentInstance();
+                long sessionTid = DapengUtil.generateTid();
+                invocationContext.sessionTid(sessionTid);
+                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID,DapengUtil.longToHexStr(sessionTid));
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     logger.info("[" + getClass().getSimpleName() + "] 每轮拉取消息数量,poll received : " + records.count() + " records");
@@ -162,6 +171,9 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                 logger.error("kafka consumer poll 反序列化消息异常:" + ex.getMessage(), ex);
             } catch (Exception e) {
                 logger.error("[KafkaConsumer][{}][run] " + e.getMessage(), groupId + ":" + topic, e);
+            } finally {
+                MDC.remove(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID);
+                InvocationContextImpl.Factory.removeCurrentInstance();
             }
         }
         consumer.close();
