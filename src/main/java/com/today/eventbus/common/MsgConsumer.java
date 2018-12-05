@@ -127,14 +127,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
         //增加partition平衡监听器回调
-        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer,this.topic,this.groupId));
+        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer, this.groupId, this.topic));
 
         while (isRunning) {
             try {
                 InvocationContext invocationContext = InvocationContextImpl.Factory.currentInstance();
                 long sessionTid = DapengUtil.generateTid();
                 invocationContext.sessionTid(sessionTid);
-                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID,DapengUtil.longToHexStr(sessionTid));
+                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     logger.info("[" + getClass().getSimpleName() + "] 每轮拉取消息数量,poll received : " + records.count() + " records");

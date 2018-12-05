@@ -88,8 +88,6 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
     public void afterPropertiesSet() {
         logger.info("ready to start consumer ,event consumer size {}, binlog consumer size {}", EVENT_CONSUMERS.size(), BINLOG_CONSUMERS.size());
         if ((EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size()) > 0) {
-
-
             //启动实例
             executorService = Executors.newFixedThreadPool(EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size());
 

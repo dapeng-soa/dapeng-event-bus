@@ -26,10 +26,10 @@ public class MsgConsumerRebalanceListener implements ConsumerRebalanceListener {
 
     private boolean firstAssigned = true;
 
-    public MsgConsumerRebalanceListener(Consumer consumer, String topic, String groupId) {
+    public MsgConsumerRebalanceListener(Consumer consumer, String groupId, String topic) {
         this.consumer = consumer;
-        this.topic = topic;
         this.groupId = groupId;
+        this.topic = topic;
     }
 
     @Override

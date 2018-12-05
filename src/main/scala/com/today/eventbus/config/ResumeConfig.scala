@@ -5,7 +5,6 @@ import java.util
 
 import com.today.eventbus.utils.CommonUtil
 import com.typesafe.config.Config
-
 import scala.collection.JavaConverters._
 import scala.collection.immutable
 
