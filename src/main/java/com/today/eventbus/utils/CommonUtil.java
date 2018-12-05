@@ -1,9 +1,14 @@
 package com.today.eventbus.utils;
 
+import com.today.eventbus.common.SysEnvUtil;
+import com.today.eventbus.config.ConfigLoader;
+import com.today.eventbus.config.ResumeConfig;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 /**
  * @author <a href=mailto:leihuazhe@gmail.com>maple</a>
@@ -12,6 +17,10 @@ import java.time.format.DateTimeFormatter;
 public class CommonUtil {
 
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss SSS");
+
+    private static Map<String, ResumeConfig> resumeConfigList = new HashMap<>();
+
+    private static volatile boolean loadFlag = false;
 
     public static String convertTimestamp(Long timeStamp) {
         if (timeStamp == null) {
@@ -85,4 +94,26 @@ public class CommonUtil {
         }
         return outBuffer.toString();
     }
+
+    /**
+     * 获取消息回溯的配置文件. /conf/application.conf
+     * <p>
+     * 注意获取该配置文件后会对原文件进行删除...
+     * <p>
+     * 只会 load 一次，因为第二次文件已经删除
+     * <p>
+     * 环境变量: {@code msg.back.tracking.path} 指定 path
+     */
+    public static synchronized Map<String, ResumeConfig> loadMsgBackConfig() {
+        if (!loadFlag) {
+            resumeConfigList.putAll(ConfigLoader.load(SysEnvUtil.MSG_BACK_TRACKING));
+            loadFlag = true;
+        }
+        return Collections.unmodifiableMap(resumeConfigList);
+    }
+
+    public static String combineResumeKey(String groupId, String topic, Integer partition) {
+        return groupId + topic + partition;
+    }
+
 }

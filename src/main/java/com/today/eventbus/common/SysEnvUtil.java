@@ -19,12 +19,20 @@ public class SysEnvUtil {
     /**
      * 当前环境容器IP
      */
-    private static final String KEY_HOST_IP = "host_ip";
+    private static final String KEY_HOST_IP = "host.ip";
+
+    /**
+     * 当前配置消费者 消息回溯 seek 重新消费 的地址路径
+     */
+    private static final String KEY_MSG_BACK_TRACKING = "msg.back.tracking.path";
 
 
     public static final String SOA_EVENTBUS_PERIOD = get(KEY_SOA_EVENTBUS_PERIOD, "300");
 
     public static final String HOST_IP = get(KEY_HOST_IP, localIp());
+
+
+    public static final String MSG_BACK_TRACKING = get(KEY_MSG_BACK_TRACKING, "application.conf");
 
 
     public static String get(String key, String defaultValue) {

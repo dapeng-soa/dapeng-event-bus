@@ -40,4 +40,10 @@ public interface Constant {
      * 重试间隔时间
      */
     int DEFAULT_RETRY_INTERVAL = 2000;
+
+
+    /**
+     * 消息回溯配置,前缀名称
+     */
+    String MSG_BACK_TRACKING = "eventbus.consumer";
 }

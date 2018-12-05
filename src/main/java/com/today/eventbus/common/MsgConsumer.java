@@ -127,7 +127,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
         //增加partition平衡监听器回调
-        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
+        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer,this.topic,this.groupId));
 
         while (isRunning) {
             try {

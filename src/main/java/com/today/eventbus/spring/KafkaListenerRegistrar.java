@@ -6,6 +6,9 @@ import com.today.binlog.BinlogKafkaConsumer;
 import com.today.eventbus.ConsumerEndpoint;
 import com.today.eventbus.MsgKafkaConsumer;
 import com.today.eventbus.common.MsgConsumer;
+import com.today.eventbus.common.SysEnvUtil;
+import com.today.eventbus.config.ConfigLoader;
+import com.today.eventbus.config.ResumeConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -85,6 +88,8 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
     public void afterPropertiesSet() {
         logger.info("ready to start consumer ,event consumer size {}, binlog consumer size {}", EVENT_CONSUMERS.size(), BINLOG_CONSUMERS.size());
         if ((EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size()) > 0) {
+
+
             //启动实例
             executorService = Executors.newFixedThreadPool(EVENT_CONSUMERS.size() + BINLOG_CONSUMERS.size());
 
