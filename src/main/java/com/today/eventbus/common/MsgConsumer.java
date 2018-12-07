@@ -140,7 +140,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                     logger.info("[" + getClass().getSimpleName() + "] 每轮拉取消息数量,poll received : " + records.count() + " records");
                     // for process every message
                     for (ConsumerRecord<KEY, VALUE> record : records) {
-                        logger.info("[" + getClass().getSimpleName() + "] receive message (收到消息，准备过滤，然后处理), topic: {} ,partition: {} ,offset: {}",
+                        logger.info("receive message => topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
                             for (ENDPOINT bizConsumer : bizConsumers) {

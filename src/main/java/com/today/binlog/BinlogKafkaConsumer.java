@@ -61,6 +61,8 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
     @Override
     protected void dealMessage(ConsumerEndpoint consumer, ConsumerRecord<Integer, byte[]> record) throws SoaException {
+        logger.info("receive message, 收到binlog消息 topic:{}, 分区:{}, offset:{}",
+                record.topic(), record.partition(), record.offset());
         Integer keyId = record.key();
         byte[] value = record.value();
 
