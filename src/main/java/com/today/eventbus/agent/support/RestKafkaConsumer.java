@@ -116,6 +116,8 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
             logger.error("[RestKafkaConsumer]:解析消息eventType出错，忽略该消息");
             return;
         }
+        logger.info("receive message,收到消息 topic:{}, 分区:{}, offset:{}, 收到类型:{}, 当前消费者处理类型:{}",
+                record.topic(), record.partition(), record.offset(), eventType, bizConsumer.getEventType());
 
         /**
          * 事件类型和 传入的even最后的事件名一致才处理

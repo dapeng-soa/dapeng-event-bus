@@ -70,8 +70,9 @@ public class MsgConsumerRebalanceListener implements ConsumerRebalanceListener {
                 });
             }
             firstAssigned = false;
+        }else {
+            partitions.forEach(this::assignedPartitionNormal);
         }
-        partitions.forEach(this::assignedPartitionNormal);
     }
 
     /**

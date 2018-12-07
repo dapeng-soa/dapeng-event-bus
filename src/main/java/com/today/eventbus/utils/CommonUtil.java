@@ -3,6 +3,8 @@ package com.today.eventbus.utils;
 import com.today.eventbus.common.SysEnvUtil;
 import com.today.eventbus.config.ConfigLoader;
 import com.today.eventbus.config.ResumeConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -15,6 +17,7 @@ import java.util.*;
  * @since 2018-11-27 1:47 PM
  */
 public class CommonUtil {
+    private static final Logger log = LoggerFactory.getLogger(CommonUtil.class);
 
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss SSS");
 
@@ -106,7 +109,9 @@ public class CommonUtil {
      */
     public static synchronized Map<String, ResumeConfig> loadMsgBackConfig() {
         if (!loadFlag) {
-            resumeConfigList.putAll(ConfigLoader.load(SysEnvUtil.MSG_BACK_TRACKING));
+            String path = SysEnvUtil.MSG_BACK_TRACKING;
+            log.info("从环境变量获取回溯配置信息 path:{}", path);
+            resumeConfigList.putAll(ConfigLoader.load(path));
             loadFlag = true;
         }
         return Collections.unmodifiableMap(resumeConfigList);

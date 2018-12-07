@@ -88,6 +88,9 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             logger.error("[" + getClass().getSimpleName() + "]<->[Parse Error]: 解析消息eventType出错，忽略该消息");
             return;
         }
+        //logger
+        logger.info("receive message,收到消息 topic:{}, 分区:{}, offset:{}, 收到类型:{}, 当前消费者处理类型:{}",
+                record.topic(), record.partition(), record.offset(), eventType, consumer.getEventType());
 
         List<Class<?>> parameterTypes = consumer.getParameterTypes();
 
@@ -96,7 +99,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 .count();
 
         if (count > 0) {
-            logger.info("[{}]<->[开始处理消息,消息KEY(唯一ID):{}]: method {}, groupId: {}, topic: {}, bean: {}",
+            logger.info("[{}]<->[开始处理消息,消息KEY:{}]: method {}, groupId: {}, topic: {}, bean: {}",
                     keyId, getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
 
             byte[] eventBinary = processor.getEventBinary();
@@ -108,11 +111,11 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 if (consumer.getHasConsumerMetaData()) {
                     ConsumerContext context = buildConsumerContext(record);
                     consumer.getMethod().invoke(consumer.getBean(), context, event);
-                    logger.info("KafkaConsumer[处理消息结束]:method {}, groupId: {},context元信息:{}",
+                    logger.info("KafkaConsumer[结束处理消息]:method {}, groupId: {},context元信息:{}",
                             consumer.getMethod().getName(), groupId, context.toString());
                 } else {
                     consumer.getMethod().invoke(consumer.getBean(), event);
-                    logger.info("KafkaConsumer[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
+                    logger.info("KafkaConsumer[结束处理消息]: method {}, groupId: {}, topic: {}, bean: {}",
                             consumer.getMethod().getName(), groupId, topic, consumer.getBean());
                 }
             } catch (IllegalAccessException | IllegalArgumentException e) {
