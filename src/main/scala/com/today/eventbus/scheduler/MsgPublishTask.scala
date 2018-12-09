@@ -97,12 +97,12 @@ class MsgPublishTask(topic: String,
     */
   def startScheduled(): Unit = {
     if (serviceName == null) {
-      schedulerPublisher.scheduleAtFixedRate(() => {
+      schedulerPublisher.scheduleWithFixedDelay(() => {
         publishMessagesAsyncWithException()
       }, initialDelay, period, TimeUnit.MILLISECONDS)
 
     } else {
-      schedulerPublisher.scheduleAtFixedRate(() => {
+      schedulerPublisher.scheduleWithFixedDelay(() => {
         // log日志多久打印一次
         val logPeriod = scheduledCount.incrementAndGet()
 
@@ -203,7 +203,7 @@ class MsgPublishTask(topic: String,
     * 基于jdk定时线程池,处理消息轮询发送....
     */
   def startScheduledSync(): Unit = {
-    schedulerPublisher.scheduleAtFixedRate(() => {
+    schedulerPublisher.scheduleWithFixedDelay(() => {
       try {
         doPublishMessagesSync()
       } catch {
