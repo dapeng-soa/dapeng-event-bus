@@ -89,8 +89,8 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             return;
         }
         //logger
-        logger.info("receive message,收到消息 topic:{}, 分区:{}, offset:{}, 收到类型:{}, 当前消费者处理类型:{}",
-                record.topic(), record.partition(), record.offset(), eventType, consumer.getEventType());
+        logger.info("receive message,收到消息 topic:{}, 分区:{}, offset:{}, 收到类型:{}, 当前订阅消费者参数:{}",
+                record.topic(), record.partition(), record.offset(), eventType, consumer.getParameterTypes());
 
         List<Class<?>> parameterTypes = consumer.getParameterTypes();
 
