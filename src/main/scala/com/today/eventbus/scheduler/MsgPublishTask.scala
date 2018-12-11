@@ -61,10 +61,6 @@ class MsgPublishTask(topic: String,
 
   /**
     * 初始化 producer 生产者
-    *
-    * @param host
-    * @param tid
-    * @return
     */
   private def initTransProducer(host: String, tid: String): MsgKafkaProducer = {
     new MsgKafkaProducer(kafkaHost, tid)
@@ -97,17 +93,17 @@ class MsgPublishTask(topic: String,
     */
   def startScheduled(): Unit = {
     if (serviceName == null) {
-      schedulerPublisher.scheduleAtFixedRate(() => {
+      schedulerPublisher.scheduleWithFixedDelay(() => {
         publishMessagesAsyncWithException()
       }, initialDelay, period, TimeUnit.MILLISECONDS)
 
     } else {
-      schedulerPublisher.scheduleAtFixedRate(() => {
+      schedulerPublisher.scheduleWithFixedDelay(() => {
         // log日志多久打印一次
         val logPeriod = scheduledCount.incrementAndGet()
 
         if (logPeriod == scheduledLoop) {
-          logger.info(s"定时线程 logger 间隔: [$logPeriod] 轮记录日志,publishTask节点是否为master:[${MasterHelper.isMaster(serviceName, versionName)}]")
+          logger.info(s"生产者定时轮询线程间隔[$logPeriod]轮记录日志,当前节点是否为master:[${MasterHelper.isMaster(serviceName, versionName)}]")
           scheduledCount.set(0)
         }
         //判断为master才执行
@@ -200,10 +196,10 @@ class MsgPublishTask(topic: String,
 
 
   /**
-    * 基于jdk定时线程池,处理消息轮询发送....
+    * 同步发送
     */
   def startScheduledSync(): Unit = {
-    schedulerPublisher.scheduleAtFixedRate(() => {
+    schedulerPublisher.scheduleWithFixedDelay(() => {
       try {
         doPublishMessagesSync()
       } catch {
@@ -216,7 +212,7 @@ class MsgPublishTask(topic: String,
 
 
   /**
-    * fetch message from database , then send to kafka broker
+    * 同步发送
     */
   def doPublishMessagesSync(): Unit = {
     val logPeriod = logCount.incrementAndGet()
@@ -273,7 +269,6 @@ class MsgPublishTask(topic: String,
     }
 
     if (logPeriod == logWhileLoop) {
-      //      logger.info(s"[scheduled logger 间隔: ${logPeriod}]::[MsgPublishTask] 结束一轮轮询，将计数器置为 0 ")
       logCount.set(0)
     }
   }

@@ -109,7 +109,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
                 //判断method参数数量...
                 if (consumer.getHasConsumerMetaData()) {
-                    ConsumerContext context = buildConsumerContext(record);
+                    ConsumerContext context = buildConsumerContext(record, eventType);
                     consumer.getMethod().invoke(consumer.getBean(), context, event);
                     logger.info("KafkaConsumer[结束处理消息]:method {}, groupId: {},context元信息:{}",
                             consumer.getMethod().getName(), groupId, context.toString());
@@ -138,11 +138,11 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
     /**
      * 构造消费者上下文元信息...
      */
-    private ConsumerContext buildConsumerContext(ConsumerRecord<Long, byte[]> record) {
+    private ConsumerContext buildConsumerContext(ConsumerRecord<Long, byte[]> record, String eventType) {
         // if null
         String timeType = record.timestampType() == null ? null : record.timestampType().name;
 
         return new ConsumerContext(record.key(), record.topic(), record.offset(), record.partition(),
-                record.timestamp(), timeType);
+                record.timestamp(), timeType, eventType);
     }
 }

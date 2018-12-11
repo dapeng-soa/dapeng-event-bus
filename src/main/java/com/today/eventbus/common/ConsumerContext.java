@@ -14,8 +14,9 @@ public class ConsumerContext {
     private final Long timestamp;
     private final String timeFormat;
     private final String timestampType;
+    private final String eventType;
 
-    public ConsumerContext(Long key, String topic, Long offset, Integer partition, Long timestamp, String timestampType) {
+    public ConsumerContext(Long key, String topic, Long offset, Integer partition, Long timestamp, String timestampType, String eventType) {
         this.key = key;
         this.topic = topic;
         this.offset = offset;
@@ -23,6 +24,7 @@ public class ConsumerContext {
         this.timestamp = timestamp;
         this.timeFormat = CommonUtil.convertTimestamp(timestamp);
         this.timestampType = timestampType;
+        this.eventType = eventType;
     }
 
     public Long getKey() {
@@ -53,9 +55,14 @@ public class ConsumerContext {
         return timestampType;
     }
 
+    public String getEventType() {
+        return eventType;
+    }
+
     @Override
     public String toString() {
-        return "Current ConsumerContext:[" + "key=" + key + ", topic='" + topic + '\'' + ", offset=" + offset + ", partition=" + partition +
-                ", timestamp=" + timestamp + ", timeFormat='" + timeFormat + '\'' + ", timestampType='" + timestampType + '\'' + ']';
+        return "ConsumerContext{" + "key=" + key + ", topic='" + topic + '\'' + ", offset=" + offset + ", partition=" + partition +
+                ", timestamp=" + timestamp + ", timeFormat='" + timeFormat + '\'' +
+                ", timestampType='" + timestampType + '\'' + ", eventType='" + eventType + '\'' + '}';
     }
 }
