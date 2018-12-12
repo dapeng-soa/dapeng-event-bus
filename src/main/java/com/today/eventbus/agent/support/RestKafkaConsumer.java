@@ -140,9 +140,11 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
             if (postResult.getCode() == HttpStatus.SC_OK) {
                 String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
+                //防止异构系统返回大量数据
+                String summary = response.length() <= 200 ? response : response.substring(0, 200);
 
-                logger.info("[HttpClient]:消息ID: {}, response code: {}, event:{}, url:{},event内容:{}",
-                        keyId, response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
+                logger.info("[HttpClient]:消息ID: {}, response => content:{}, event:{}, url:{},event内容:{}",
+                        keyId, summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
             } else {
                 //重试
                 logger.warn("[HttpClient]:调用远程url: {} 失败,进行重试。http code: {},topic:{},event:{},event内容:{}",
@@ -160,8 +162,13 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                         logger.info("[HttpRetry]-{},httpclient重试，url:{},topic:{},event:{},重试次数:{}",
                                 Thread.currentThread().getName(), bizConsumer.getDestinationUrl(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
                         threadResult = post(bizConsumer.getDestinationUrl(), pairs);
-                        logger.info("重试返回结果:response code: {}, event:{}, url:{}",
-                                CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
+
+                        String result = CharDecodeUtil.decodeUnicode(threadResult.getContent());
+                        //防止异构系统返回大量数据
+                        String summary = result.length() <= 200 ? result : result.substring(0, 200);
+
+                        logger.info("重试返回结果:response => content: {}, event:{}, url:{}",
+                                summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
                     if (threadResult.getCode() == HttpStatus.SC_OK) {
                         logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);
