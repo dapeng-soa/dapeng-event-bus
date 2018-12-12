@@ -42,11 +42,13 @@ libraryDependencies ++= Seq(
     ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
   ),
   "com.github.dapeng-soa" % "dapeng-open-api" % "2.1.1",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.5",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.5" % Optional,
   "org.simpleframework" % "simple-xml" % "2.7.1",
   "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE",
   // https://mvnrepository.com/artifact/mysql/mysql-connector-java
-  "mysql" % "mysql-connector-java" % "5.1.47" % Test
+  "mysql" % "mysql-connector-java" % "5.1.47" % Test,
+  "com.squareup.okhttp3" % "okhttp" % "3.11.0" % Optional
+
 
 )
 

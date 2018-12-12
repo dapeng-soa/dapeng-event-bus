@@ -69,7 +69,9 @@ public class RestListenerFactory implements InitializingBean, Lifecycle {
         consumerGroups.forEach(group -> {
             Integer threadCount = group.getThreadCount();
             for (int i = 0; i < threadCount; i++) {
-                RestKafkaConsumer consumerInstance = new RestKafkaConsumer(group.getId(), group.getKafkaHost(), group.getGroupId(), group.getTopic());
+                RestKafkaConsumer consumerInstance = new RestKafkaConsumer(group.getId(), group.getKafkaHost(),
+                        group.getGroupId(), group.getTopic(), group.getHttpType());
+
                 group.getConsumers().getConsumers().forEach(consumer -> {
                     consumer.setGroupId(group.getGroupId());
                     consumer.setService(group.getService());

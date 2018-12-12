@@ -37,6 +37,9 @@ public class ConsumerGroup {
     @Element(name = "consumers")
     private AgentConsumers consumers;
 
+    @Element(name = "http-type", required = false)
+    private int httpType;
+
     public String getId() {
         return id;
     }
@@ -73,6 +76,10 @@ public class ConsumerGroup {
         return consumers;
     }
 
+    public int getHttpType() {
+        return httpType;
+    }
+
     @Override
     public String toString() {
         return "ConsumerGroup{" +
@@ -84,6 +91,7 @@ public class ConsumerGroup {
                 ", version='" + version + '\'' +
                 ", threadCount=" + threadCount +
                 ", consumers=" + consumers +
+                ", httpType=" + httpType +
                 '}';
     }
 }

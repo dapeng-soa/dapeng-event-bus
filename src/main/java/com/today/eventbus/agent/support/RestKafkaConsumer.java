@@ -7,6 +7,9 @@ import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
+import com.today.eventbus.agent.support.http.HttpClientStrategy;
+import com.today.eventbus.agent.support.http.HttpStrategy;
+import com.today.eventbus.agent.support.http.StrategyType;
 import com.today.eventbus.agent.support.parse.BizConsumer;
 import com.today.eventbus.common.MsgConsumer;
 import com.today.eventbus.common.retry.DefaultRetryStrategy;
@@ -44,16 +47,22 @@ import java.util.concurrent.Executors;
  */
 public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
-    private String instName;
+    private final String instName;
+    /**
+     * 请求异构系统的 http 客户端。 已实现 okHttp、httpClient
+     */
+    private final HttpStrategy httpStrategy;
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...
      * @param groupId
      * @param topic
      */
-    public RestKafkaConsumer(String instName, String kafkaHost, String groupId, String topic) {
+    public RestKafkaConsumer(String instName, String kafkaHost, String groupId, String topic, int httpType) {
         super(kafkaHost, groupId, topic);
         this.instName = instName;
+        this.httpStrategy = StrategyType.buildStrategy(StrategyType.getType(httpType));
+        logger.info("use httpStrategy is {}", httpStrategy.getClass().getName());
     }
 
     public String getInstName() {
@@ -123,26 +132,23 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 throw new NullPointerException("OptimizedMetadata Service is null");
             }
 
-            /**
-             * 针对 dapeng 2.0.5 OptimizedMetadata
-             */
             JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), service.getOptimizedStructs().getOrDefault(bizConsumer.getEvent(), null));
 
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
 
-            List<NameValuePair> pairs = combinesParams(eventType, body);
-
             //检查length是否长于100
             String eventLog = body.length() <= 100 ? body : body.substring(0, 100);
 
-            logger.info("[RestKafkaConsumer]:解析消息成功,准备请求调用!");
-            ResponseResult postResult = post(bizConsumer.getDestinationUrl(), pairs);
-
+            logger.info("[RestConsumer]:解析消息成功,准备请求调用!");
+            ResponseResult postResult = httpStrategy.post(bizConsumer.getDestinationUrl(), eventType, body);
+            logger.info("response code:{}", postResult.getCode());
             if (postResult.getCode() == HttpStatus.SC_OK) {
                 String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
+                //返回结果也做一下限制
+                String summary = response.length() <= 200 ? body : body.substring(0, 200);
 
-                logger.info("[HttpClient]:消息ID: {}, response code: {}, event:{}, url:{},event内容:{}",
-                        keyId, response, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
+                logger.info("[Http]:消息ID: {}, remote response: code:{}, body:{}, event:{}, url:{},event内容:{}",
+                        keyId, postResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
             } else {
                 //重试
                 logger.warn("[HttpClient]:调用远程url: {} 失败,进行重试。http code: {},topic:{},event:{},event内容:{}",
@@ -157,11 +163,17 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                         } catch (InterruptedException e) {
                             logger.error("睡眠10s,等待重试，被打断! " + e.getMessage());
                         }
-                        logger.info("[HttpRetry]-{},httpclient重试，url:{},topic:{},event:{},重试次数:{}",
+                        logger.info("[HttpRetry]-{},http重试，url:{},topic:{},event:{},重试次数:{}",
                                 Thread.currentThread().getName(), bizConsumer.getDestinationUrl(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
-                        threadResult = post(bizConsumer.getDestinationUrl(), pairs);
-                        logger.info("重试返回结果:response code: {}, event:{}, url:{}",
-                                CharDecodeUtil.decodeUnicode(threadResult.getContent()), bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
+
+                        threadResult = httpStrategy.post(bizConsumer.getDestinationUrl(), eventType, body);
+
+                        String decodeResult = CharDecodeUtil.decodeUnicode(threadResult.getContent());
+                        //返回结果也做一下限制
+                        String summary = decodeResult.length() <= 200 ? body : body.substring(0, 200);
+
+                        logger.info("重试返回结果 => remote response: code: {}, body:{}, event:{}, url:{}",
+                                threadResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
                     } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
                     if (threadResult.getCode() == HttpStatus.SC_OK) {
                         logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);
@@ -173,69 +185,6 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
         } else {
             logger.debug("不解析当前消息，eventType:{},bizEvent:{}", eventType, bizConsumer.getEvent());
         }
-    }
-
-    /**
-     * httpClient to post request
-     *
-     * @param uri
-     * @param arguments
-     * @return
-     */
-    private ResponseResult post(String uri, List<NameValuePair> arguments) {
-        long begin = System.currentTimeMillis();
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(uri);
-        try {
-            httpPost.setEntity(new UrlEncodedFormEntity(arguments, "UTF-8"));
-        } catch (UnsupportedEncodingException ignored) {
-        }
-
-        CloseableHttpResponse response = null;
-        try {
-            response = httpClient.execute(httpPost);
-
-            int code = response.getStatusLine().getStatusCode();
-            String content = EntityUtils.toString(response.getEntity(), "UTF-8");
-            logger.info("[HttpPost]请求耗时: {}ms", System.currentTimeMillis() - begin);
-            return new ResponseResult(code, content, null);
-        } catch (IOException e) {
-            logger.warn("[RestKafkaConsumer]::[httpClient调用失败] " + e.getMessage(), e);
-            return new ResponseResult(-1, "", e);
-        } finally {
-            // close resource
-            if (response != null) {
-                try {
-                    response.close();
-                } catch (IOException e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-
-            if (httpClient != null) {
-                try {
-                    httpClient.close();
-                } catch (IOException e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-
-    /**
-     * combine request parameters
-     *
-     * @param eventType
-     * @param params
-     * @return
-     */
-    private List<NameValuePair> combinesParams(String eventType, String params) {
-        List<NameValuePair> pairs = new ArrayList<>(4);
-        pairs.add(new BasicNameValuePair("event", eventType));
-        pairs.add(new BasicNameValuePair("body", params));
-
-        return pairs;
     }
 
 
