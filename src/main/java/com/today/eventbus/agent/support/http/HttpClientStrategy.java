@@ -37,6 +37,20 @@ public class HttpClientStrategy implements HttpStrategy {
         return doPost(url, nameValuePairs);
     }
 
+    @Override
+    public void close() {
+        try {
+            if (httpClient != null)
+                httpClient.close();
+        } catch (IOException e) {
+            try {
+                httpClient.close();
+            } catch (IOException e1) {
+                logger.error(e1.getMessage(), e1);
+            }
+        }
+    }
+
     /**
      * httpClient to post request
      */

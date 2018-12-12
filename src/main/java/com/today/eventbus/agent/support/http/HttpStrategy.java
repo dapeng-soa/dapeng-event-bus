@@ -1,5 +1,6 @@
 package com.today.eventbus.agent.support.http;
 
+import com.today.eventbus.agent.support.parse.BizConsumer;
 import com.today.eventbus.utils.ResponseResult;
 
 /**
@@ -9,6 +10,12 @@ import com.today.eventbus.utils.ResponseResult;
 public interface HttpStrategy {
 
     ResponseResult post(String url, String eventType, String params);
+
+
+    default void asyncPost(BizConsumer bizConsumer, Long keyId, String eventType, String body, String eventLog) {
+    }
+
+    void close();
 
 
 }

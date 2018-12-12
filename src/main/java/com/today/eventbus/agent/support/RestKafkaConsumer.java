@@ -7,7 +7,7 @@ import com.github.dapeng.org.apache.thrift.TException;
 import com.github.dapeng.org.apache.thrift.protocol.TCompactProtocol;
 import com.github.dapeng.util.TCommonTransport;
 import com.github.dapeng.util.TKafkaTransport;
-import com.today.eventbus.agent.support.http.HttpClientStrategy;
+import com.today.eventbus.agent.support.http.AsyncHttpStrategy;
 import com.today.eventbus.agent.support.http.HttpStrategy;
 import com.today.eventbus.agent.support.http.StrategyType;
 import com.today.eventbus.agent.support.parse.BizConsumer;
@@ -20,21 +20,9 @@ import com.today.eventbus.utils.CharDecodeUtil;
 import com.today.eventbus.utils.Constant;
 import com.today.eventbus.utils.ResponseResult;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -111,7 +99,6 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
             }
         }
 
-
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
         String eventType;
         try {
@@ -140,51 +127,73 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
             String eventLog = body.length() <= 100 ? body : body.substring(0, 100);
 
             logger.info("[RestConsumer]:解析消息成功,准备请求调用!");
-            ResponseResult postResult = httpStrategy.post(bizConsumer.getDestinationUrl(), eventType, body);
-            logger.info("response code:{}", postResult.getCode());
-            if (postResult.getCode() == HttpStatus.SC_OK) {
-                String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
-                //返回结果也做一下限制
-                String summary = response.length() <= 200 ? response : response.substring(0, 200);
 
-                logger.info("[Http]:消息ID: {}, remote response: code:{}, body:{}, event:{}, url:{},event内容:{}",
-                        keyId, postResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
+            //这是一个异步的模式
+            if (AsyncHttpStrategy.class.isAssignableFrom(httpStrategy.getClass())) {
+                httpStrategy.asyncPost(bizConsumer, keyId, eventType, body, eventLog);
             } else {
-                //重试
-                logger.warn("[HttpClient]:调用远程url: {} 失败,进行重试。http code: {},topic:{},event:{},event内容:{}",
-                        bizConsumer.getDestinationUrl(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent(), eventLog);
-                // another thread to execute retry
-                InnerExecutor.service.execute(() -> {
-                    int i = 1;
-                    ResponseResult threadResult;
-                    do {
-                        try {
-                            Thread.sleep(10000);
-                        } catch (InterruptedException e) {
-                            logger.error("睡眠10s,等待重试，被打断! " + e.getMessage());
-                        }
-                        logger.info("[HttpRetry]-{},http重试，url:{},topic:{},event:{},重试次数:{}",
-                                Thread.currentThread().getName(), bizConsumer.getDestinationUrl(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
-
-                        threadResult = httpStrategy.post(bizConsumer.getDestinationUrl(), eventType, body);
-
-                        String decodeResult = CharDecodeUtil.decodeUnicode(threadResult.getContent());
-                        //返回结果也做一下限制
-                        String summary = decodeResult.length() <= 200 ? decodeResult : decodeResult.substring(0, 200);
-
-                        logger.info("重试返回结果 => remote response: code: {}, body:{}, event:{}, url:{}",
-                                threadResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
-                    } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
-                    if (threadResult.getCode() == HttpStatus.SC_OK) {
-                        logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);
-                    } else {
-                        logger.error("[HttpClient]:消息代理经过3次重试,仍然调用失败,失败原因:" + threadResult.getEx().getMessage(), threadResult.getEx());
-                    }
-                });
+                requestForRemote(bizConsumer, keyId, eventType, body, eventLog);
             }
+
         } else {
             logger.debug("不解析当前消息，eventType:{},bizEvent:{}", eventType, bizConsumer.getEvent());
         }
+    }
+
+
+    /**
+     * 具体请求 remote 系统逻辑
+     *
+     * @param bizConsumer
+     * @param keyId
+     * @param eventType
+     * @param body
+     * @param eventLog
+     */
+    public void requestForRemote(BizConsumer bizConsumer, Long keyId, String eventType, String body, String eventLog) {
+        ResponseResult postResult = httpStrategy.post(bizConsumer.getDestinationUrl(), eventType, body);
+        logger.info("response code:{}", postResult.getCode());
+        if (postResult.getCode() == HttpStatus.SC_OK) {
+            String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
+            //返回结果也做一下限制
+            String summary = response.length() <= 200 ? response : response.substring(0, 200);
+
+            logger.info("[Http]:消息ID: {}, remote response: code:{}, body:{}, event:{}, url:{},event内容:{}",
+                    keyId, postResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
+        } else {
+            //重试
+            logger.warn("[HttpClient]:调用远程url: {} 失败,进行重试。http code: {},topic:{},event:{},event内容:{}",
+                    bizConsumer.getDestinationUrl(), postResult.getCode(), bizConsumer.getTopic(), bizConsumer.getEvent(), eventLog);
+            // another thread to execute retry
+            InnerExecutor.service.execute(() -> {
+                int i = 1;
+                ResponseResult threadResult;
+                do {
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                        logger.error("睡眠10s,等待重试，被打断! " + e.getMessage());
+                    }
+                    logger.info("[HttpRetry]-{},http重试，url:{},topic:{},event:{},重试次数:{}",
+                            Thread.currentThread().getName(), bizConsumer.getDestinationUrl(), bizConsumer.getTopic(), bizConsumer.getEvent(), i);
+
+                    threadResult = httpStrategy.post(bizConsumer.getDestinationUrl(), eventType, body);
+
+                    String decodeResult = CharDecodeUtil.decodeUnicode(threadResult.getContent());
+                    //返回结果也做一下限制
+                    String summary = decodeResult.length() <= 200 ? decodeResult : decodeResult.substring(0, 200);
+
+                    logger.info("重试返回结果 => remote response: code: {}, body:{}, event:{}, url:{}",
+                            threadResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
+                } while (i++ <= 3 && threadResult.getCode() != HttpStatus.SC_OK);
+                if (threadResult.getCode() == HttpStatus.SC_OK) {
+                    logger.info("[HttpClient]:消息代理经过{}次，重试消息返回成功,", i);
+                } else {
+                    logger.error("[HttpClient]:消息代理经过4次重试,仍然调用失败,失败原因:" + threadResult.getEx().getMessage(), threadResult.getEx());
+                }
+            });
+        }
+
     }
 
 
@@ -221,5 +230,11 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
     @Override
     protected void buildRetryStrategy() {
         retryStrategy = new DefaultRetryStrategy();
+    }
+
+
+    @Override
+    public void close() {
+        httpStrategy.close();
     }
 }

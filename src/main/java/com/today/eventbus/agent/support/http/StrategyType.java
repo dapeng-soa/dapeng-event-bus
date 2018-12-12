@@ -35,6 +35,8 @@ public enum StrategyType {
                 return new OkHttpStrategy();
             case HTTP_CLIENT:
                 return new HttpClientStrategy();
+            case ASYNC_HTTP:
+                return new AsyncHttpStrategy();
             default:
                 return new OkHttpStrategy();
         }

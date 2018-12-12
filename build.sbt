@@ -47,7 +47,8 @@ libraryDependencies ++= Seq(
   "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE",
   // https://mvnrepository.com/artifact/mysql/mysql-connector-java
   "mysql" % "mysql-connector-java" % "5.1.47" % Test,
-  "com.squareup.okhttp3" % "okhttp" % "3.11.0" % Optional
+  "com.squareup.okhttp3" % "okhttp" % "3.11.0" % Optional,
+  "org.asynchttpclient" % "async-http-client" % "2.6.0" % Optional
 
 
 )

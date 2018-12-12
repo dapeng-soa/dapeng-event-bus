@@ -77,6 +77,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     public void stopRunning() {
         isRunning = false;
         logger.info(getClass().getSimpleName() + "::stop the kafka consumer to fetch message ");
+        close();
     }
 
     private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue<>();
@@ -124,7 +125,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                 InvocationContext invocationContext = InvocationContextImpl.Factory.currentInstance();
                 long sessionTid = DapengUtil.generateTid();
                 invocationContext.sessionTid(sessionTid);
-                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID,DapengUtil.longToHexStr(sessionTid));
+                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     logger.info("[" + getClass().getSimpleName() + "] 每轮拉取消息数量,poll received : " + records.count() + " records");
@@ -254,6 +255,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
      * 子类选择的重试策略
      */
     protected abstract void buildRetryStrategy();
+
+
+    public void close() {
+
+    }
 
 
 }

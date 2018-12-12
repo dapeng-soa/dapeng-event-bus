@@ -54,4 +54,9 @@ public class OkHttpStrategy implements HttpStrategy {
             return new ResponseResult(-1, "", e);
         }
     }
+
+    @Override
+    public void close() {
+        logger.info("okHttp no need to close");
+    }
 }
