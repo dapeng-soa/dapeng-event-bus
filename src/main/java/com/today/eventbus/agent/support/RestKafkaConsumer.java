@@ -145,7 +145,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
             if (postResult.getCode() == HttpStatus.SC_OK) {
                 String response = CharDecodeUtil.decodeUnicode(postResult.getContent());
                 //返回结果也做一下限制
-                String summary = response.length() <= 200 ? body : body.substring(0, 200);
+                String summary = response.length() <= 200 ? response : response.substring(0, 200);
 
                 logger.info("[Http]:消息ID: {}, remote response: code:{}, body:{}, event:{}, url:{},event内容:{}",
                         keyId, postResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl(), eventLog);
@@ -170,7 +170,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
                         String decodeResult = CharDecodeUtil.decodeUnicode(threadResult.getContent());
                         //返回结果也做一下限制
-                        String summary = decodeResult.length() <= 200 ? body : body.substring(0, 200);
+                        String summary = decodeResult.length() <= 200 ? decodeResult : decodeResult.substring(0, 200);
 
                         logger.info("重试返回结果 => remote response: code: {}, body:{}, event:{}, url:{}",
                                 threadResult.getCode(), summary, bizConsumer.getEvent(), bizConsumer.getDestinationUrl());
