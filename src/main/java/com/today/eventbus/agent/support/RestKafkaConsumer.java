@@ -123,9 +123,6 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
                 throw new NullPointerException("OptimizedMetadata Service is null");
             }
 
-            /**
-             * 针对 dapeng 2.0.5 OptimizedMetadata
-             */
             JsonSerializer jsonDecoder = new JsonSerializer(service, null, bizConsumer.getVersion(), service.getOptimizedStructs().getOrDefault(bizConsumer.getEvent(), null));
 
             String body = jsonDecoder.read(new TCompactProtocol(new TKafkaTransport(eventBinary, TCommonTransport.Type.Read)));
