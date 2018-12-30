@@ -175,13 +175,13 @@ class MsgPublishTask(topic: String,
           })
 
           producer.batchSend(topic, eventMsgs)
+          resultSetCounter.addAndGet(eventMsgs.size)
+          counter.addAndGet(eventMsgs.size)
         }
       })
 
-      resultSetCounter.incrementAndGet()
-
-      if (counter.get() > 0) {
-        logger.info(s" This round : process and publish messages(${counter.get()}) rows to kafka \n")
+      if (resultSetCounter.get() > 0) {
+        logger.info(s" This round : process and publish messages(${resultSetCounter.get()}) rows to kafka \n")
       }
 
     } while (resultSetCounter.get() == window)
