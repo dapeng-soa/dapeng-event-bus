@@ -69,12 +69,13 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
   def batchSend(topic: String, eventMessage: List[EventStore]): Unit = {
     try {
       producer.beginTransaction()
-      eventMessage.foreach((eventStore: EventStore) ⇒ {
+      eventMessage.foreach((eventStore: EventStore) => {
         val recordKey = eventStore.eventBiz match {
           case Some(value) ⇒ value.hashCode.toLong
           case None ⇒ eventStore.id
         }
-        producer.send(new ProducerRecord[Long, Array[Byte]](topic, recordKey, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
+        producer.send(new ProducerRecord[Long, Array[Byte]](topic, recordKey, eventStore.eventBinary),
+          (metadata: RecordMetadata, exception: Exception) => {
           if (exception != null) {
             logger.error(
               s"""生产者批量发送消息失败当前失败记录,id: ${eventStore.id}, recordKey: $recordKey,
