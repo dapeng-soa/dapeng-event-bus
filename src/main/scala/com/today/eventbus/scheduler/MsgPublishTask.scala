@@ -4,12 +4,13 @@ import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.dapeng.core.helper.MasterHelper
+import com.github.dapeng.core.{InvocationContext, InvocationContextImpl}
+import com.github.dapeng.core.helper.{DapengUtil, MasterHelper, SoaSystemEnvProperties}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.today.eventbus.common.SysEnvUtil
 import javax.sql.DataSource
 import com.today.eventbus.{EventStore, MsgKafkaProducer}
-import org.slf4j.LoggerFactory
+import org.slf4j.{LoggerFactory, MDC}
 import com.today.eventbus.scheduler.ScalaSql._
 import org.apache.kafka.common.KafkaException
 import org.springframework.beans.factory.DisposableBean
@@ -123,6 +124,10 @@ class MsgPublishTask(topic: String,
     */
   def publishMessagesAsyncWithException(): Unit = {
     try {
+      val invocationContext = InvocationContextImpl.Factory.currentInstance
+      val sessionTid = DapengUtil.generateTid
+      invocationContext.sessionTid(sessionTid)
+      MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid))
       doPublishMessagesAsync()
     } catch {
       case e: KafkaException => {
@@ -131,6 +136,9 @@ class MsgPublishTask(topic: String,
         producer = initTransProducer(kafkaHost, tid)
       }
       case e: Exception => logger.error(s"eventBus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
+    }finally {
+      MDC.remove(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID)
+      InvocationContextImpl.Factory.removeCurrentInstance()
     }
   }
 
