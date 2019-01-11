@@ -21,7 +21,10 @@ object ScalaSql {
 
   def withTransaction[T](dataSource: DataSource)(f: Connection => T): T = {
     val conn = dataSource.getConnection
+    val stmt:Statement = conn.createStatement()
     try {
+      logger.info("connection start transaction")
+      stmt.execute("START TRANSACTION")
       conn.setAutoCommit(false)
       val result = f(conn)
       conn.commit
@@ -32,6 +35,7 @@ object ScalaSql {
         conn.rollback
         throw ex
     } finally {
+      stmt.close();
       conn.close()
     }
   }
