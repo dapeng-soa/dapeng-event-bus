@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "2.1.1-RELEASE"
+version := "F_proxySql"
 
 scalaVersion := "2.12.4"
 
