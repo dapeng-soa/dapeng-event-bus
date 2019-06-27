@@ -1,10 +1,14 @@
 package com.today.eventbus
 
 
+import java.sql.Connection
+
 import com.today.eventbus.config.KafkaConfigBuilder
+import com.today.eventbus.scheduler.ScalaSql.executeUpdate
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.{ByteArraySerializer, LongSerializer}
 import org.slf4j.{Logger, LoggerFactory}
+import wangzx.scala_commons.sql._
 
 /**
   *
@@ -69,7 +73,7 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
     * @param topic
     * @param eventMessage
     */
-  def batchSend(topic: String, eventMessage: List[EventStore]): Unit = {
+  def batchSend(topic: String, eventMessage: List[EventStore], conn: Connection): Unit = {
     try {
       producer.beginTransaction()
       eventMessage.foreach((eventStore: EventStore) => {
@@ -79,6 +83,7 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
               s"""msgKafkaProducer: batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
             throw exception
           } else {
+            executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${eventStore.id}")
             logger.debug(s"发送消息,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}")
           }
         })

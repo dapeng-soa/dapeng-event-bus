@@ -14,12 +14,14 @@ import com.today.eventbus.serializer.KafkaLongDeserializer;
 import com.today.eventbus.serializer.KafkaMessageProcessor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.MDC;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 
 /**
@@ -29,6 +31,9 @@ import java.util.Properties;
  * @since 2018年03月02日 上午1:38
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
+    private MsgKafkaProducer retryProducer;
+    private static String transactionId = "retryQueue" + UUID.randomUUID().toString();
+
     /**
      * @param kafkaHost host1:port1,host2:port2,...
      * @param groupId
@@ -63,6 +68,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeat);
         }
         consumer = new KafkaConsumer<>(props);
+        retryProducer = new MsgKafkaProducer(kafkaConnect, transactionId);
     }
 
     @Override
@@ -75,7 +81,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
      * process message
      */
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] message, Long keyId) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] message, Long keyId,String source) throws SoaException {
         logger.debug("[{}]:[BEGIN] 开始处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
@@ -104,20 +110,35 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 consumer.getMethod().invoke(consumer.getBean(), event);
                 logger.info("[{}]<->[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
                         getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
-            } catch (IllegalAccessException | IllegalArgumentException e) {
-                logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
-            } catch (InvocationTargetException e) {
-                // 包装异常处理
-                throwRealException(e, consumer.getMethod().getName());
-            } catch (TException e) {
-                logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
-            } catch (InstantiationException e) {
-                logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
+            } catch (Exception e){
+                if (e instanceof InvocationTargetException){
+                    // 包装异常处理
+                    if(!"retry".equals(source)) {
+                        sendToRetryTopic(keyId, message);
+                    }
+                    throwRealException((InvocationTargetException) e, consumer.getMethod().getName());
+                }else {
+                    if (e instanceof IllegalAccessException || e instanceof IllegalArgumentException) {
+                        logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
+                    }else if(e instanceof TException ){
+                        logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
+                    }else if(e instanceof  InstantiationException){
+                        logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
+                    }
+                    sendToRetryTopic(keyId, message);
+                }
+
+
             }
         } else {
             logger.debug("[{}]<-> 方法 [ {} ] 不接收当前收到的消息类型 {} ", getClass().getSimpleName(), consumer.getMethod().getName(), eventType);
         }
 
         logger.debug("[{}]:[END] 结束处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
+    }
+
+    private void sendToRetryTopic(Long key, byte[] value) {
+        logger.info("[\" + getClass().getSimpleName() + \"] 消息处理失败，消息被发送到重试topic，等待被重新消费");
+        retryProducer.send("retryQueue", key, value);
     }
 }

@@ -178,11 +178,8 @@ class MsgPublishTask(topic: String,
           /* val idStr: String = eventMsgs.map(_.id).mkString(",")
            executeUpdate(conn, "DELETE FROM dp_common_event WHERE id in (" + idStr + ")")*/
 
-          eventMsgs.map(_.id).foreach(id => {
-            executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${id}")
-          })
 
-          producer.batchSend(topic, eventMsgs)
+          producer.batchSend(topic, eventMsgs, conn)
           resultSetCounter.addAndGet(eventMsgs.size)
           counter.addAndGet(eventMsgs.size)
         }

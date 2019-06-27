@@ -84,7 +84,7 @@ public class RestKafkaConsumer extends MsgConsumer<Long, byte[], BizConsumer> {
 
 
     @Override
-    protected void dealMessage(BizConsumer bizConsumer, byte[] value, Long keyId) throws TException {
+    protected void dealMessage(BizConsumer bizConsumer, byte[] value, Long keyId, String source) throws TException {
         OptimizedMetadata.OptimizedService service = ServiceCache.getService(bizConsumer.getService(), bizConsumer.getVersion());
         if (service == null) {
             logger.warn("元数据信息service为空，未能获取到元数据!!!");

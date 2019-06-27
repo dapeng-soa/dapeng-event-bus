@@ -60,7 +60,7 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
 
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] value, Integer keyId) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] value, Integer keyId, String source) throws SoaException {
         List<BinlogEvent> binlogEvents = BinlogMsgProcessor.process(value);
         // > 0 才处理
         if (binlogEvents.size() > 0) {
