@@ -117,8 +117,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
         //增加partition平衡监听器回调
-        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
-
+        if(this.topic.contains(",")){
+            this.consumer.subscribe(Arrays.asList(this.topic.split(",")), new MsgConsumerRebalanceListener(consumer));
+        }else{
+            this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
+        }
         while (isRunning) {
             try {
                 InvocationContext invocationContext = InvocationContextImpl.Factory.currentInstance();
