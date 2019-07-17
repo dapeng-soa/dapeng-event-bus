@@ -33,6 +33,7 @@ import java.util.UUID;
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
 
     private static String transactionId = "retryQueue" + UUID.randomUUID().toString();
+    private static String retryTopic = System.getenv("serviceName") + "-retry-topic";
 
     /**
      * @param kafkaHost host1:port1,host2:port2,...
@@ -137,6 +138,6 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
     @Override
     protected void sendToRetryTopic(Long key, byte[] value) {
         logger.info("[" + getClass().getSimpleName() + "] 消息处理失败，消息被发送到重试topic，等待被重新消费");
-        retryProducer.send("retryQueue", key, value);
+        retryProducer.send(retryTopic, key, value);
     }
 }
