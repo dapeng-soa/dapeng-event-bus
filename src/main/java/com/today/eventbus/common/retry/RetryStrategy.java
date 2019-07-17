@@ -1,5 +1,6 @@
 package com.today.eventbus.common.retry;
 
+import com.github.dapeng.core.SoaException;
 import com.github.dapeng.org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,25 +27,20 @@ public abstract class RetryStrategy {
         retryTemplate.setBackOffPolicy(createBackOffPolicy());
     }
 
-    public void execute(RetryMsgCallback callback) {
-        try {
-            retryTemplate.execute((RetryCallback<Object, Exception>) context -> {
-                try {
-                    callback.dealMessage();
-                } catch (TException e) {
-                    logger.error("[Retry]:重试消息失败,重试次数: {}, Cause: {}", context.getRetryCount() + 1, e.getMessage());
-                    throw new RuntimeException(e.getMessage(), e);
-                }
-                logger.info("[Retry]:消息重试消费成功,重试次数: " + (context.getRetryCount()));
-                return true;
-            }, context -> {
-                logger.error("[Retry]:达到重试上限,不再进行重试,重试次数: {}", context.getRetryCount() + 1);
-                return true;
-            });
-        } catch (Exception e) {
-            logger.error("[Retry]:RetryStrategy have a error !");
-        }
-
+    public void execute(RetryMsgCallback callback) throws Exception {
+        retryTemplate.execute((RetryCallback<Object, Exception>) context -> {
+            try {
+                callback.dealMessage();
+            } catch (TException e) {
+                logger.error("[Retry]:重试消息失败,重试次数: {}, Cause: {}", context.getRetryCount() + 1, e.getMessage());
+                throw new RuntimeException(e.getMessage(), e);
+            }
+            logger.info("[Retry]:消息重试消费成功,重试次数: " + (context.getRetryCount()));
+            return true;
+        }, context -> {
+            logger.error("[Retry]:达到重试上限,不再进行重试,重试次数: {}", context.getRetryCount());
+            throw new SoaException("Event-retry-err", "重试达到上限，重试失败");
+        });
     }
 
     /**

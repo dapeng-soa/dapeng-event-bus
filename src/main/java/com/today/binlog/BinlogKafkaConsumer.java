@@ -33,6 +33,11 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
     }
 
     @Override
+    protected void sendToRetryTopic(Integer integer, byte[] bytes) {
+
+    }
+
+    @Override
     protected void init() {
         logger.info("[KafkaConsumer] [init] " +
                 "kafkaConnect(" + kafkaConnect +
@@ -60,7 +65,7 @@ public class BinlogKafkaConsumer extends MsgConsumer<Integer, byte[], ConsumerEn
 
 
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] value, Integer keyId, String source) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] value, Integer keyId) throws SoaException {
         List<BinlogEvent> binlogEvents = BinlogMsgProcessor.process(value);
         // > 0 才处理
         if (binlogEvents.size() > 0) {

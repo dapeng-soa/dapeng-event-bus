@@ -136,7 +136,7 @@ class MsgPublishTask(topic: String,
         producer = initTransProducer(kafkaHost, tid)
       }
       case e: Exception => logger.error(s"eventBus: 定时轮询线程内出现了异常，已捕获 msg:${e.getMessage}", e)
-    }finally {
+    } finally {
       MDC.remove(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID)
       InvocationContextImpl.Factory.removeCurrentInstance()
     }

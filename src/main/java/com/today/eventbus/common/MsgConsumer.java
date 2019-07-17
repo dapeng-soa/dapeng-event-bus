@@ -7,6 +7,7 @@ import com.github.dapeng.core.helper.DapengUtil;
 import com.github.dapeng.core.helper.SoaSystemEnvProperties;
 import com.github.dapeng.org.apache.thrift.TException;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.today.eventbus.MsgKafkaProducer;
 import com.today.eventbus.common.retry.RetryStrategy;
 import com.today.eventbus.utils.Constant;
 import org.apache.kafka.clients.consumer.CommitFailedException;
@@ -50,6 +51,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     protected String kafkaConnect;
 
     protected KafkaConsumer<KEY, VALUE> consumer;
+
+    protected MsgKafkaProducer retryProducer;
 
     protected RetryStrategy retryStrategy;
 
@@ -117,14 +120,17 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     public void run() {
         logger.info("[" + getClass().getSimpleName() + "][ {} ][run] ", this.groupId + ":" + this.topic);
         //增加partition平衡监听器回调
-        this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
-
+        if (this.topic.contains(",")) {
+            this.consumer.subscribe(Arrays.asList(this.topic.split(",")), new MsgConsumerRebalanceListener(consumer));
+        } else {
+            this.consumer.subscribe(Arrays.asList(this.topic), new MsgConsumerRebalanceListener(consumer));
+        }
         while (isRunning) {
             try {
                 InvocationContext invocationContext = InvocationContextImpl.Factory.currentInstance();
                 long sessionTid = DapengUtil.generateTid();
                 invocationContext.sessionTid(sessionTid);
-                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID,DapengUtil.longToHexStr(sessionTid));
+                MDC.put(SoaSystemEnvProperties.KEY_LOGGER_SESSION_TID, DapengUtil.longToHexStr(sessionTid));
                 ConsumerRecords<KEY, VALUE> records = consumer.poll(100);
                 if (records != null && records.count() > 0) {
                     logger.info("[" + getClass().getSimpleName() + "] 每轮拉取消息数量,poll received : " + records.count() + " records");
@@ -134,7 +140,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                                 record.topic(), record.partition(), record.offset());
                         try {
                             for (ENDPOINT bizConsumer : bizConsumers) {
-                                dealMessage(bizConsumer, record.value(), record.key(),"msg");
+                                dealMessage(bizConsumer, record.value(), record.key());
                             }
                         } catch (Exception e) {
                             logger.error(getClass().getSimpleName() + "::[订阅消息处理失败]: " + e.getMessage(), e);
@@ -205,7 +211,13 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                         /**
                          * 将每一条重试逻辑放入新的线程中
                          */
-                        executor.execute(() -> retryStrategy.execute(() -> dealMessage(endpoint, record.value(), record.key(),"retry")));
+                        executor.execute(() -> {
+                            try {
+                                retryStrategy.execute(() -> dealMessage(endpoint, record.value(), record.key()));
+                            } catch (Exception e) {
+                                sendToRetryTopic(record.key(), record.value());
+                            }
+                        });
                     }
                     logger.info("retry result {} \r\n", record);
                 } catch (InterruptedException e) {
@@ -233,6 +245,11 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         consumer.seek(topicPartition, offset);
     }
 
+    /**
+     * 重试失败，消息发送到重试的topic，等待被消费
+     */
+    protected abstract void sendToRetryTopic(KEY key, VALUE value);
+
 
     // template method
 
@@ -243,7 +260,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
      * @param value
      * @throws TException SoaException 是其子类 受检异常
      */
-    protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value, KEY key, String source) throws TException;
+    protected abstract void dealMessage(ENDPOINT bizConsumer, VALUE value, KEY key) throws TException;
 
     /**
      * 初始化 consumer

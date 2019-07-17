@@ -31,7 +31,7 @@ import java.util.UUID;
  * @since 2018年03月02日 上午1:38
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
-    private MsgKafkaProducer retryProducer;
+
     private static String transactionId = "retryQueue" + UUID.randomUUID().toString();
 
     /**
@@ -81,7 +81,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
      * process message
      */
     @Override
-    protected void dealMessage(ConsumerEndpoint consumer, byte[] message, Long keyId,String source) throws SoaException {
+    protected void dealMessage(ConsumerEndpoint consumer, byte[] message, Long keyId) throws SoaException {
         logger.debug("[{}]:[BEGIN] 开始处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
 
         KafkaMessageProcessor processor = new KafkaMessageProcessor();
@@ -110,19 +110,16 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                 consumer.getMethod().invoke(consumer.getBean(), event);
                 logger.info("[{}]<->[处理消息结束]: method {}, groupId: {}, topic: {}, bean: {}",
                         getClass().getSimpleName(), consumer.getMethod().getName(), groupId, topic, consumer.getBean());
-            } catch (Exception e){
-                if (e instanceof InvocationTargetException){
+            } catch (Exception e) {
+                if (e instanceof InvocationTargetException) {
                     // 包装异常处理
-                    if(!"retry".equals(source)) {
-                        sendToRetryTopic(keyId, message);
-                    }
                     throwRealException((InvocationTargetException) e, consumer.getMethod().getName());
-                }else {
+                } else {
                     if (e instanceof IllegalAccessException || e instanceof IllegalArgumentException) {
                         logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
-                    }else if(e instanceof TException ){
+                    } else if (e instanceof TException) {
                         logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
-                    }else if(e instanceof  InstantiationException){
+                    } else if (e instanceof InstantiationException) {
                         logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
                     }
                     sendToRetryTopic(keyId, message);
@@ -137,8 +134,9 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
         logger.debug("[{}]:[END] 结束处理订阅方法 dealMessage, method {}", getClass().getSimpleName(), consumer.getMethod().getName());
     }
 
-    private void sendToRetryTopic(Long key, byte[] value) {
-        logger.info("[\" + getClass().getSimpleName() + \"] 消息处理失败，消息被发送到重试topic，等待被重新消费");
+    @Override
+    protected void sendToRetryTopic(Long key, byte[] value) {
+        logger.info("[" + getClass().getSimpleName() + "] 消息处理失败，消息被发送到重试topic，等待被重新消费");
         retryProducer.send("retryQueue", key, value);
     }
 }
