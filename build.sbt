@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "2.1.1-RELEASE"
+version := "2.1.2-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
@@ -41,7 +41,7 @@ libraryDependencies ++= Seq(
     ExclusionRule().withOrganization("com.alibaba.otter").withName("canal.common"),
     ExclusionRule().withOrganization("commons-lang").withName("commons-lang")
   ),
-  "com.github.dapeng-soa" % "dapeng-open-api" % "2.1.1",
+  "com.github.dapeng-soa" % "dapeng-open-api" % "2.1.2-SNAPSHOT",
   "org.apache.httpcomponents" % "httpclient" % "4.5.5",
   "org.simpleframework" % "simple-xml" % "2.7.1",
   "org.springframework.retry" % "spring-retry" % "1.2.2.RELEASE",
