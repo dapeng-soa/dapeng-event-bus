@@ -31,8 +31,6 @@ import java.util.UUID;
  * @since 2018年03月02日 上午1:38
  */
 public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint> {
-
-    private static String transactionId = "retryQueue" + UUID.randomUUID().toString();
     private static String retryTopic = System.getenv("serviceName") + "-retry-topic";
 
     /**
@@ -69,7 +67,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeat);
         }
         consumer = new KafkaConsumer<>(props);
-        retryProducer = new MsgKafkaProducer(kafkaConnect, transactionId);
+        retryProducer = new MsgKafkaProducer(kafkaConnect, "retryQueue" + UUID.randomUUID().toString());
     }
 
     @Override
@@ -123,7 +121,11 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                     } else if (e instanceof InstantiationException) {
                         logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
                     }
-                    sendToRetryTopic(keyId, message);
+                    try {
+                        sendToRetryTopic(keyId, message);
+                    } catch (Exception re) {
+                        logger.error("[" + getClass().getSimpleName() + "] 发送到重试队列失败:" + re.getMessage(), re);
+                    }
                 }
 
 
@@ -137,7 +139,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
     @Override
     protected void sendToRetryTopic(Long key, byte[] value) {
-        logger.info("[" + getClass().getSimpleName() + "] 消息处理失败，消息被发送到重试topic，等待被重新消费");
+        logger.info("[" + getClass().getSimpleName() + "] 消息处理失败，消息被发送到重试topic:[" + retryTopic + "]，等待被重新消费");
         retryProducer.send(retryTopic, key, value);
     }
 }
