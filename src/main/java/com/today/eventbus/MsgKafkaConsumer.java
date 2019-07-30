@@ -115,7 +115,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                     throwRealException((InvocationTargetException) e, consumer.getMethod().getName());
                 } else {
                     if (e instanceof IllegalAccessException || e instanceof IllegalArgumentException) {
-                        logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件:" + eventType, e);
+                        logger.error("[" + getClass().getSimpleName() + "]<->参数不合法，当前方法虽然订阅此topic，但是不接收当前事件, 注意检查当前消费者的序列化类型:" + eventType, e);
                     } else if (e instanceof TException) {
                         logger.error("[" + getClass().getSimpleName() + "]<->[反序列化事件 {" + eventType + "} 出错]: " + e.getMessage(), e);
                     } else if (e instanceof InstantiationException) {
