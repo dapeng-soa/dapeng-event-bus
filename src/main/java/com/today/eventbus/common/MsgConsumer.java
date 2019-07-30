@@ -37,6 +37,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private static boolean msgRetryEnable = Boolean.valueOf(SoaSystemEnvProperties.get("soa.msg.retry.enable", "true"));
+
     private List<ENDPOINT> bizConsumers = new ArrayList<>();
 
     /**
@@ -192,10 +194,12 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         }
         logger.error("[" + getClass().getSimpleName() + "]::[TargetException]:" + target.getClass(), target.getMessage());
 
-        if (target instanceof SoaException) {
-            //业务异常不打印堆栈.
-            logger.error("[" + getClass().getSimpleName() + "]::[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage());
-            return;
+        if (!msgRetryEnable) {
+            if (target instanceof SoaException) {
+                //业务异常不打印堆栈.
+                logger.error("[" + getClass().getSimpleName() + "]::[订阅者处理消息失败,不会重试] throws SoaException: " + target.getMessage());
+                return;
+            }
         }
         throw new SoaException("deal message failed, throws: " + target.getMessage(), methodName);
     }
