@@ -67,7 +67,6 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
             props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeat);
         }
         consumer = new KafkaConsumer<>(props);
-        retryProducer = new MsgKafkaProducer(kafkaConnect, "retryQueue" + UUID.randomUUID().toString());
     }
 
     @Override
@@ -139,6 +138,7 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
 
     @Override
     protected void sendToRetryTopic(Long key, byte[] value) {
+        retryProducer = new MsgKafkaProducer(kafkaConnect, "retryQueue" + UUID.randomUUID().toString());
         logger.info("[" + getClass().getSimpleName() + "] 消息处理失败，消息被发送到重试topic:[" + retryTopic + "]，等待被重新消费");
         retryProducer.send(retryTopic, key, value);
     }
