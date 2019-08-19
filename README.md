@@ -206,7 +206,7 @@ EventBus.fireEvent(RegisteredEvent(event_id,user.id))
 EventBus.fireEvent(RegisteredEvent(event_id,user.id,"topic",store_id))
 ```
 ---
-# 事件定时发布修改：
+## 事件定时发布修改：
 
 在dapeng.properties加入环境变量配置
 ```
@@ -226,14 +226,14 @@ soa.eventbus.publish.period=100
 
 
 ```
-## 重点： 配置轮询发布消息的时间间隔，以ms为单位，在dapeng.properties中配置
+### 重点： 配置轮询发布消息的时间间隔，以ms为单位，在dapeng.properties中配置
 ```
 soa.eventbus.publish.period=500 //代表500ms
 
 
 ```
 
-# 生产方因为轮询数据库发布消息，如果间隔很短，会产生大量的日志，需要修改级别，在logback下进行如下配置：
+### 生产方因为轮询数据库发布消息，如果间隔很短，会产生大量的日志，需要修改级别，在logback下进行如下配置：
 
 
 ```
@@ -309,7 +309,7 @@ soa.eventbus.publish.period=500 //代表500ms
 ```java
 // java
 
-@KafkaConsumer(groupId = "eventConsumer1", topic = "user_1.0.0_event",kafkaHostKey = "kafka.consumer.host"))
+@KafkaConsumer(groupId = "eventConsumer1", topic = "user_1.0.0_event",kafkaHostKey = "kafka.consumer.host")
 public class EventConsumer {
     @KafkaListener(serializer = RegisteredEventSerializer.class)
     public void subscribeRegisteredEvent(RegisteredEvent event){
@@ -319,7 +319,7 @@ public class EventConsumer {
 }
 ```
 
-#### 注意： 订阅方在消费消息时，处理消息可能会抛出业务异常，如果该异常导致的消息丢失不需要重试，可以增加如下配置。event-bus会将在消费消息时产生的异常进行重试，并在重试失败后将消息发送到失败队列`xxx(serviceName)_retry_topic`,等待业务方重新消费，从而保证消息不丢失。
+#### 注意： 订阅方在消费消息时，处理消息可能会抛出业务异常，如果该异常导致的消息丢失不需要重试，可以增加如下配置。event-bus会将在消费消息时产生的异常进行重试，并在重试失败后将消息发送到失败队列`xxx(serviceName)-retry-topic`,等待业务方重新消费，从而保证消息不丢失。
 ```
 soa.msg.retry.enable=false
 ```
