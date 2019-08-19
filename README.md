@@ -28,12 +28,14 @@
 ```SET NAMES utf8;
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS `dp_common_event`;
-CREATE TABLE `dp_common_event` (
+DROP TABLE IF EXISTS `dp_event_info`;
+CREATE TABLE `dp_event_info` (
   `id` bigint(20) NOT NULL COMMENT '事件id，全局唯一, 可用于幂等操作',
   `event_type` varchar(255) DEFAULT NULL COMMENT '事件类型',
-  `event_binary` blob DEFAULT NULL COMMENT '事件内容',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
+  `event_binary` blob COMMENT '事件内容',
+  `event_topic` varchar(255) DEFAULT NULL COMMENT '事件topic',
+  `event_key` varchar(255) DEFAULT NULL COMMENT '事件分区key值',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -61,6 +63,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 ### IDL定义
 - 以事件双方约定的消息内容定义IDL结构体
 - 规定必须为每个事件定义事件ID，以便消费者做消息幂等
+- 为事件自定义转发的topic和分区的key值
 
 `==> events.thrift`
 
@@ -69,6 +72,7 @@ namespace java com.github.dapeng.user.events
 
 /**
 * 注册成功事件, 由于需要消费者做幂等,故加上事件Id
+* 由于某些事件要自定义该事件转发的topic和分区partition，故也要加上topic和key字段
 **/
 struct RegisteredEvent {
     /**
@@ -79,6 +83,14 @@ struct RegisteredEvent {
     * 用户id
     **/
     2: i64 userId
+    /**
+    * topic
+    **/
+    3: optional string topic,
+    /**
+    * 分区key
+    **/
+    4: optional string key
 }
 
 ...more
@@ -185,8 +197,13 @@ override def dispatchEvent(event: Any): Unit = {}
 </bean>
 ```
 - 事件发布
+如果没有自定义指定事件的topic和分区key，会使用`services.xml`中指定的topic和事件event_id来做消息转发。
 ```scala
 EventBus.fireEvent(RegisteredEvent(event_id,user.id))
+```
+也可以自定义该事件的转发topic和用于分区的key值
+```scala
+EventBus.fireEvent(RegisteredEvent(event_id,user.id,"topic",store_id))
 ```
 ---
 # 事件定时发布修改：
@@ -302,8 +319,11 @@ public class EventConsumer {
 }
 ```
 
-## 注意： 订阅方在消费消息时，如果处理消息可能会抛出业务异常（就是业务有关的异常，如前置检查不通过，等等),在消费消息时，需要捕获业务系统。
-
+#### 注意： 订阅方在消费消息时，处理消息可能会抛出业务异常，如果该异常导致的消息丢失不需要重试，可以增加如下配置。event-bus会将在消费消息时产生的异常进行重试，并在重试失败后将消息发送到失败队列`xxx(serviceName)_retry_topic`,等待业务方重新消费，从而保证消息不丢失。
+```
+soa.msg.retry.enable=false
+```
+增加了上述配置后，可以自己捕获异常
 ```
 @KafkaListener(serializer = classOf[ModifySkuBuyingPriceEventSerializer])
 def modifySkuBuyingPriceEvent(event: ModifySkuBuyingPriceEvent): Unit = {
