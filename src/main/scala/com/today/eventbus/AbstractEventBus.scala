@@ -65,7 +65,9 @@ trait AbstractEventBus {
     val eventType = event.getClass.getName
     // fetch id
     val id = getMsgId(event)
-    val executeSql = sql"INSERT INTO  dp_common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
+    val topic = getMsgTopic(event)
+    val key = getMsgKey(event)
+    val executeSql = sql"INSERT INTO  dp_event_info set id=${id}, event_type=${eventType}, event_binary=${bytes}, event_topic=${topic},event_key=${key}"
     dataSource.executeUpdate(executeSql)
 
     logger.info(s"save message unique id: $id, eventType: $eventType successful ")
@@ -86,7 +88,9 @@ trait AbstractEventBus {
     val eventType = event.getClass.getName
     // fetch id
     val id = getMsgId(event)
-    val executeSql = sql"INSERT INTO  dp_common_event set id=${id}, event_type=${eventType}, event_binary=${bytes}"
+    val topic = getMsgTopic(event)
+    val key = getMsgKey(event)
+    val executeSql = sql"INSERT INTO  dp_event_info set id=${id}, event_type=${eventType}, event_binary=${bytes}, event_topic=${topic},event_key=${key}"
     conn.executeUpdate(executeSql)
 
     logger.info(s"save message unique id: $id, eventType: $eventType  successful with manually connection")
@@ -107,6 +111,50 @@ trait AbstractEventBus {
     } catch {
       case e: Exception =>
         logger.error("获取消息id失败，请检查事件是否带有唯一id，以及字段名是否为id")
+        throw e
+    }
+  }
+
+  /**
+    *
+    * 反射拿到event里面的topic
+    *
+    * @param event
+    * @return
+    */
+  private def getMsgTopic(event: Any): String = {
+    try {
+      val field: Field = event.getClass.getDeclaredField("topic")
+      field.setAccessible(true)
+      field.get(event) match {
+        case Some(x) =>  x.asInstanceOf[String]
+        case None =>  null
+      }
+    } catch {
+      case e: Exception =>
+        logger.error("获取event的topic失败...")
+        throw e
+    }
+  }
+
+  /**
+    *
+    * 反射拿到event里面的key值
+    *
+    * @param event
+    * @return
+    */
+  private def getMsgKey(event: Any): String = {
+    try {
+      val field: Field = event.getClass.getDeclaredField("key")
+      field.setAccessible(true)
+      field.get(event) match {
+        case Some(x) =>  x.asInstanceOf[String]
+        case None =>  null
+      }
+    } catch {
+      case e: Exception =>
+        logger.error("获取event的key值失败...")
         throw e
     }
   }

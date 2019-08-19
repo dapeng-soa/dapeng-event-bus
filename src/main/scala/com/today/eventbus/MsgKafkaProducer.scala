@@ -74,16 +74,20 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
     * @param eventMessage
     */
   def batchSend(topic: String, eventMessage: List[EventStore], conn: Connection): Unit = {
+    var loggerTopic = topic
     try {
       producer.beginTransaction()
       eventMessage.foreach((eventStore: EventStore) => {
-        producer.send(new ProducerRecord[Long, Array[Byte]](topic, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
+        val topicNew = if (eventStore.eventTopic != null) eventStore.eventTopic else topic
+        loggerTopic = topicNew
+        val partition = generatePartition(topicNew, eventStore)
+        producer.send(new ProducerRecord[Long, Array[Byte]](topicNew, partition, eventStore.id, eventStore.eventBinary), (metadata: RecordMetadata, exception: Exception) => {
           if (exception != null) {
             logger.error(
               s"""msgKafkaProducer: batch  send message to broker failed in transaction per msg ,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}""")
             throw exception
           } else {
-            executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${eventStore.id}")
+            executeUpdate(conn, sql"DELETE FROM dp_event_info WHERE id = ${eventStore.id}")
             logger.debug(s"发送消息,id: ${eventStore.id}, topic: ${metadata.topic}, offset: ${metadata.offset}, partition: ${metadata.partition}")
           }
         })
@@ -93,8 +97,8 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
       logger.info(s"bizProducer:批量发送消息 id:(${eventMessage.map(_.id).toString}),size:[${eventMessage.size}]  to kafka broker successful")
     } catch {
       case e: Exception =>
+        logger.error("send message failed,topic: {}", loggerTopic)
         logger.error(e.getMessage, e)
-        logger.error("send message failed,topic: {}", topic)
         try {
           producer.abortTransaction()
         } catch {
@@ -114,4 +118,12 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
     logger.info("<======== shutdown KafkaProducer successful =========>")
   }
 
+  def generatePartition(topic: String, eventStore: EventStore): Int = {
+    val numPartitions = producer.partitionsFor(topic).size()
+    if (eventStore.eventKey == null) {
+      Math.abs(eventStore.hashCode() % numPartitions)
+    } else {
+      Math.abs(eventStore.eventKey.hashCode() % numPartitions)
+    }
+  }
 }

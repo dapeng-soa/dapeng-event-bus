@@ -10,7 +10,7 @@ public interface Constant {
 
     String DEFAULT_CONSUMER_HOST_KEY = "kafka.consumer.host";
 
-    String DEFAULT_EVENT_DATA_TABLE_NAME = "dp_common_event";
+    String DEFAULT_EVENT_DATA_TABLE_NAME = "dp_event_info";
 
     String DEFAULT_EVENT_LOCK_TABLE_NAME = "dp_event_lock";
 

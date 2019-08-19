@@ -170,13 +170,13 @@ class MsgPublishTask(topic: String,
         val lockRow = row[Row](conn, sql"SELECT * FROM dp_event_lock WHERE id = 1 FOR UPDATE")
 
         if (logPeriod == logWhileLoop) {
-          logger.info(s"[scheduled logger 间隔: $logPeriod]::获得dp_event_lock锁:$lockRow,开始查询消息表dp_common_event")
+          logger.info(s"[scheduled logger 间隔: $logPeriod]::获得dp_event_lock锁:$lockRow,开始查询消息表dp_event_info")
         }
 
-        val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}")
+        val eventMsgs: List[EventStore] = rows[EventStore](conn, sql"SELECT * FROM dp_event_info limit ${window}")
         if (eventMsgs.nonEmpty) {
           /* val idStr: String = eventMsgs.map(_.id).mkString(",")
-           executeUpdate(conn, "DELETE FROM dp_common_event WHERE id in (" + idStr + ")")*/
+           executeUpdate(conn, "DELETE FROM dp_event_info WHERE id in (" + idStr + ")")*/
 
 
           producer.batchSend(topic, eventMsgs, conn)
@@ -249,8 +249,8 @@ class MsgPublishTask(topic: String,
           logger.info(s"[scheduled logger 间隔: ${logPeriod}]::获得 dp_event_lock 锁,开始查询消息并发送 lock: ${lockRow}")
         }
 
-        eachRow[EventStore](conn, sql"SELECT * FROM dp_common_event limit ${window}") { event =>
-          val result: Int = executeUpdate(conn, sql"DELETE FROM dp_common_event WHERE id = ${event.id}")
+        eachRow[EventStore](conn, sql"SELECT * FROM dp_event_info limit ${window}") { event =>
+          val result: Int = executeUpdate(conn, sql"DELETE FROM dp_event_info WHERE id = ${event.id}")
 
           if (result == 1) {
             producer.send(topic, event.id, event.eventBinary)

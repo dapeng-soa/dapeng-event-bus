@@ -26,7 +26,7 @@ object ProducerTest {
       val input = in.readLine
       if (input == "quit") System.exit(0)
       if (!("" == input)) {
-        dataSource.executeUpdate(sql"""insert into dp_common_event set event_type = $input ,event_binary=${input.getBytes} """)
+        dataSource.executeUpdate(sql"""insert into dp_event_info set event_type = $input ,event_binary=${input.getBytes} """)
       }
     } while (true)
 
