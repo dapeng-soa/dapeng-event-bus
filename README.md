@@ -71,8 +71,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 namespace java com.github.dapeng.user.events
 
 /**
-* 注册成功事件, 由于需要消费者做幂等,故加上事件Id
-* 由于某些事件要自定义该事件转发的topic和分区partition，故也要加上topic和key字段
+* 注册成功事件, 由于需要消费者做幂等,故加上事件Id，如果没有指定分区key值，则使用事件ID进行分区选择
+* 由于某些事件要自定义该事件转发的topic和指定特定分区partition，故也要加上topic和key字段
 **/
 struct RegisteredEvent {
     /**
@@ -140,7 +140,8 @@ service UserService{
     <constructor-arg name="dataSource" ref="tx_demo_dataSource"/>
 </bean>
 ```
-- topic kafka消息topic，领域区分(建议:领域_版本号_event)
+- topic kafka消息topic，领域区分(建议:领域_版本号_event)。
+  如果事件发布时没有指定topic，就默认使用该topic进行消息转发。
 - kafkaHost kafka集群地址(如:127.0.0.1:9091,127.0.0.1:9092)
 - tidPrefix kafka事务id前缀，领域区分
 - dataSource 使用业务的 dataSource
@@ -197,6 +198,7 @@ override def dispatchEvent(event: Any): Unit = {}
 </bean>
 ```
 - 事件发布
+
 如果没有自定义指定事件的topic和分区key，会使用`services.xml`中指定的topic和事件event_id来做消息转发。
 ```scala
 EventBus.fireEvent(RegisteredEvent(event_id,user.id))
@@ -319,7 +321,7 @@ public class EventConsumer {
 }
 ```
 
-#### 注意： 订阅方在消费消息时，处理消息可能会抛出业务异常，如果该异常导致的消息丢失不需要重试，可以增加如下配置。event-bus会将在消费消息时产生的异常进行重试，并在重试失败后将消息发送到失败队列`xxx(serviceName)-retry-topic`,等待业务方重新消费，从而保证消息不丢失。
+#### 注意： 订阅方在消费消息时，处理消息可能会抛出业务异常，如果该异常导致的消息丢失不需要重试，可以增加如下配置。否则event-bus会在消费消息产生的异常时进行重试，并在重试失败后将消息发送到失败队列`xxx(serviceName)-retry-topic`,等待业务方重新消费，从而保证消息不丢失。
 ```
 soa.msg.retry.enable=false
 ```
