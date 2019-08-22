@@ -128,9 +128,12 @@ trait AbstractEventBus {
       field.setAccessible(true)
       field.get(event) match {
         case Some(x) =>  x.asInstanceOf[String]
+        case x => x.asInstanceOf[String]
         case None =>  null
       }
     } catch {
+      case e:NoSuchFieldException =>
+        null
       case e: Exception =>
         logger.error("获取event的topic失败...")
         throw e
@@ -150,9 +153,12 @@ trait AbstractEventBus {
       field.setAccessible(true)
       field.get(event) match {
         case Some(x) =>  x.asInstanceOf[String]
+        case x => x.asInstanceOf[String]
         case None =>  null
       }
     } catch {
+      case e:NoSuchFieldException =>
+        null
       case e: Exception =>
         logger.error("获取event的key值失败...")
         throw e
