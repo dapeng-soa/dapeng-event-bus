@@ -6,7 +6,6 @@ import java.sql.Connection
 import javax.sql.DataSource
 import com.github.dapeng.org.apache.thrift.TException
 import com.today.eventbus.serializer.KafkaMessageProcessor
-import org.apache.kafka.common.internals.Topic
 import org.slf4j.LoggerFactory
 
 import scala.beans.BeanProperty

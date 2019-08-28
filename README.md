@@ -63,16 +63,13 @@ SET FOREIGN_KEY_CHECKS = 1;
 ### IDL定义
 - 以事件双方约定的消息内容定义IDL结构体
 - 规定必须为每个事件定义事件ID，以便消费者做消息幂等
-- (可选)为事件自定义转发的topic和分区的key值
 
 `==> events.thrift`
-
-没有自定义转发的topic和分区的key值。
 ```thrift
 namespace java com.github.dapeng.user.events
 
 /**
-* 注册成功事件, 由于需要消费者做幂等,故加上事件Id，没有定义分区key值，所以默认使用事件id进行分区选择
+* 注册成功事件, 由于需要消费者做幂等,故加上事件Id
 **/
 struct RegisteredEvent {
     /**
@@ -83,35 +80,6 @@ struct RegisteredEvent {
     * 用户id
     **/
     2: i64 userId
-}
-
-...more
-
-```
-自定义了事件的转发topic和分区key值。
-```thrift
-namespace java com.github.dapeng.user.events
-
-/**
-* 自定义的事件转发topic和key值是否是optional，根据业务需要定义
-**/
-struct RegisteredEvent {
-    /**
-    * 事件Id
-    **/
-    1: i64 id,
-    /**
-    * 用户id
-    **/
-    2: i64 userId
-    /**
-    * topic
-    **/
-    3: optional string topic,
-    /**
-    * 分区key
-    **/
-    4: optional string key
 }
 
 ...more
@@ -162,7 +130,7 @@ service UserService{
 </bean>
 ```
 - topic kafka消息topic，领域区分(建议:领域_版本号_event)。
-  如果事件没有指定topic，就默认使用该topic进行消息转发。
+  如果事件发布时没有指定topic，就默认使用该topic进行消息转发。
 - kafkaHost kafka集群地址(如:127.0.0.1:9091,127.0.0.1:9092)
 - tidPrefix kafka事务id前缀，领域区分
 - dataSource 使用业务的 dataSource
@@ -222,11 +190,11 @@ override def dispatchEvent(event: Any): Unit = {}
 
 如果没有自定义指定事件的topic和分区key，会使用`services.xml`中指定的topic和事件event_id来做消息转发。
 ```scala
-EventBus.fireEvent(RegisteredEvent(event_id,user.id))
+EventBus.fireEvent(RegisteredEvent(event_id,user.id),None,None)
 ```
 也可以自定义该事件的转发topic和用于分区的key值
 ```scala
-EventBus.fireEvent(RegisteredEvent(event_id,user.id,"topic",store_id))
+EventBus.fireEvent(RegisteredEvent(event_id,user.id),Some(topic),Some(key))
 ```
 ---
 ## 事件定时发布修改：
