@@ -35,6 +35,10 @@ trait AbstractEventBus {
     persistenceEvent(event, topic, partitionKey)
   }
 
+  def fireEvent(event: Any): Unit = {
+    fireEvent(event, None, None)
+  }
+
   /**
     * fire a event with manually
     *
