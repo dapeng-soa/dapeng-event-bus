@@ -121,7 +121,7 @@ class MsgKafkaProducer(serverHost: String, transactionId: String) {
   def generatePartition(topic: String, eventStore: EventStore): Int = {
     val numPartitions = producer.partitionsFor(topic).size()
     if (eventStore.eventKey == null) {
-      Math.abs(eventStore.hashCode() % numPartitions)
+      Math.abs(eventStore.id.hashCode() % numPartitions)
     } else {
       Math.abs(eventStore.eventKey.hashCode() % numPartitions)
     }

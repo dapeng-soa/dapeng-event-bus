@@ -6,6 +6,7 @@ import java.sql.Connection
 import javax.sql.DataSource
 import com.github.dapeng.org.apache.thrift.TException
 import com.today.eventbus.serializer.KafkaMessageProcessor
+import org.apache.kafka.common.internals.Topic
 import org.slf4j.LoggerFactory
 
 import scala.beans.BeanProperty
@@ -30,9 +31,9 @@ trait AbstractEventBus {
     *
     * @param event biz custom event
     */
-  def fireEvent(event: Any): Unit = {
+  def fireEvent(event: Any, topic: Option[String], partitionKey: Option[String]): Unit = {
     dispatchEvent(event)
-    persistenceEvent(event)
+    persistenceEvent(event, topic, partitionKey)
   }
 
   /**
@@ -41,9 +42,9 @@ trait AbstractEventBus {
     * @param event biz custom event
     * @param conn  biz custom conn
     */
-  def fireEventManually(event: Any, conn: Connection): Unit = {
+  def fireEventManually(event: Any, conn: Connection, topic: Option[String], partitionKey: Option[String]): Unit = {
     dispatchEvent(event)
-    persistenceEventManually(event, conn)
+    persistenceEventManually(event, conn, topic, partitionKey)
   }
 
   /**
@@ -59,15 +60,15 @@ trait AbstractEventBus {
     * @param event biz custom event
     */
   @throws[TException]
-  private def persistenceEvent(event: Any): Unit = {
+  private def persistenceEvent(event: Any, topic: Option[String], partitionKey: Option[String]): Unit = {
     val processor = new KafkaMessageProcessor[Any]
     val bytes: Array[Byte] = processor.encodeMessage(event)
     val eventType = event.getClass.getName
     // fetch id
     val id = getMsgId(event)
-    val topic = getMsgTopic(event)
-    val key = getMsgKey(event)
-    val executeSql = sql"INSERT INTO  dp_event_info set id=${id}, event_type=${eventType}, event_binary=${bytes}, event_topic=${topic},event_key=${key}"
+    val event_topic = transferVal(topic)
+    val event_partition = transferVal(partitionKey)
+    val executeSql = sql"INSERT INTO  dp_event_info set id=${id}, event_type=${eventType}, event_binary=${bytes}, event_topic=${event_topic},event_key=${event_partition}"
     dataSource.executeUpdate(executeSql)
 
     logger.info(s"save message unique id: $id, eventType: $eventType successful ")
@@ -81,16 +82,16 @@ trait AbstractEventBus {
     * @throws
     */
   @throws[TException]
-  private def persistenceEventManually(event: Any, conn: Connection): Unit = {
+  private def persistenceEventManually(event: Any, conn: Connection, topic: Option[String], partitionKey: Option[String]): Unit = {
     logger.info("prepare to save event message with manually connection")
     val processor = new KafkaMessageProcessor[Any]
     val bytes: Array[Byte] = processor.encodeMessage(event)
     val eventType = event.getClass.getName
     // fetch id
     val id = getMsgId(event)
-    val topic = getMsgTopic(event)
-    val key = getMsgKey(event)
-    val executeSql = sql"INSERT INTO  dp_event_info set id=${id}, event_type=${eventType}, event_binary=${bytes}, event_topic=${topic},event_key=${key}"
+    val event_topic = transferVal(topic)
+    val event_partition = transferVal(partitionKey)
+    val executeSql = sql"INSERT INTO  dp_event_info set id=${id}, event_type=${eventType}, event_binary=${bytes}, event_topic=${event_topic},event_key=${event_partition}"
     conn.executeUpdate(executeSql)
 
     logger.info(s"save message unique id: $id, eventType: $eventType  successful with manually connection")
@@ -115,53 +116,10 @@ trait AbstractEventBus {
     }
   }
 
-  /**
-    *
-    * 反射拿到event里面的topic
-    *
-    * @param event
-    * @return
-    */
-  private def getMsgTopic(event: Any): String = {
-    try {
-      val field: Field = event.getClass.getDeclaredField("topic")
-      field.setAccessible(true)
-      field.get(event) match {
-        case Some(x) =>  x.asInstanceOf[String]
-        case x => x.asInstanceOf[String]
-        case None =>  null
-      }
-    } catch {
-      case e:NoSuchFieldException =>
-        null
-      case e: Exception =>
-        logger.error("获取event的topic失败...")
-        throw e
-    }
-  }
-
-  /**
-    *
-    * 反射拿到event里面的key值
-    *
-    * @param event
-    * @return
-    */
-  private def getMsgKey(event: Any): String = {
-    try {
-      val field: Field = event.getClass.getDeclaredField("key")
-      field.setAccessible(true)
-      field.get(event) match {
-        case Some(x) =>  x.asInstanceOf[String]
-        case x => x.asInstanceOf[String]
-        case None =>  null
-      }
-    } catch {
-      case e:NoSuchFieldException =>
-        null
-      case e: Exception =>
-        logger.error("获取event的key值失败...")
-        throw e
+  private def transferVal(value: Option[String]): String = {
+    value match {
+      case null | None => null
+      case Some(x) => x.asInstanceOf[String]
     }
   }
 
