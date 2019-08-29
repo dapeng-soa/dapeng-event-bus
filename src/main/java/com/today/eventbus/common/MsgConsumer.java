@@ -82,6 +82,14 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     public void stopRunning() {
         isRunning = false;
         logger.info(getClass().getSimpleName() + "::stop the kafka consumer to fetch message ");
+        if (executor != null) {
+            executor.shutdown();
+            try {
+                executor.awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                logger.error("InterruptedException error", e);
+            }
+        }
     }
 
     private LinkedBlockingQueue<ConsumerRecord<KEY, VALUE>> retryMsgQueue = new LinkedBlockingQueue<>();
