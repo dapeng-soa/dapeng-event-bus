@@ -51,8 +51,7 @@ trait AbstractEventBus {
   }
 
   def fireEventManually(event: Any, conn: Connection): Unit = {
-    dispatchEvent(event)
-    persistenceEventManually(event, conn, None, None)
+    fireEventManually(event, conn, None, None)
   }
 
   /**
