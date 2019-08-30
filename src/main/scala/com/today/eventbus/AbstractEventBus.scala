@@ -50,6 +50,11 @@ trait AbstractEventBus {
     persistenceEventManually(event, conn, topic, partitionKey)
   }
 
+  def fireEventManually(event: Any, conn: Connection): Unit = {
+    dispatchEvent(event)
+    persistenceEventManually(event, conn, None, None)
+  }
+
   /**
     * 业务系统处理事件分发逻辑
     *
