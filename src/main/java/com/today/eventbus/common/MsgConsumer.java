@@ -85,7 +85,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
         if (executor != null) {
             executor.shutdown();
             try {
-                executor.awaitTermination(30, TimeUnit.SECONDS);
+                executor.awaitTermination(20, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 logger.error("InterruptedException error", e);
             }
@@ -182,7 +182,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                 InvocationContextImpl.Factory.removeCurrentInstance();
             }
         }
-        consumer.close();
+        consumer.close(10,TimeUnit.SECONDS);
         logger.info("[{}]::kafka consumer stop running already!", getClass().getSimpleName());
     }
 

@@ -105,8 +105,8 @@ public class KafkaListenerRegistrar implements LifeCycleAware {
         if (!isRunning) return;
 
         logger.info("==============> begin to stop KafkaListenerRegistrar");
-        EVENT_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
-        BINLOG_CONSUMERS.values().forEach(MsgConsumer::stopRunning);
+        EVENT_CONSUMERS.values().parallelStream().forEach(MsgConsumer::stopRunning);
+        BINLOG_CONSUMERS.values().parallelStream().forEach(MsgConsumer::stopRunning);
         if (executorService != null) {
             executorService.shutdown();
             try {
