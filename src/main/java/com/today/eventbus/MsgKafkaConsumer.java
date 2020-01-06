@@ -141,5 +141,6 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
         retryProducer = new MsgKafkaProducer(kafkaConnect, "retryQueue" + UUID.randomUUID().toString());
         logger.info("[" + getClass().getSimpleName() + "] 消息处理失败，消息被发送到重试topic:[" + retryTopic + "]，等待被重新消费");
         retryProducer.send(retryTopic, key, value);
+        retryProducer.closeTransProducer();
     }
 }
