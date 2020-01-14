@@ -10,10 +10,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.today.eventbus.MsgKafkaProducer;
 import com.today.eventbus.common.retry.RetryStrategy;
 import com.today.eventbus.utils.Constant;
-import org.apache.kafka.clients.consumer.CommitFailedException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.SerializationException;
 import org.slf4j.Logger;
@@ -22,9 +19,7 @@ import org.slf4j.MDC;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -38,6 +33,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static boolean msgRetryEnable = Boolean.valueOf(SoaSystemEnvProperties.get("soa.msg.retry.enable", "true"));
+
+    private Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
     private List<ENDPOINT> bizConsumers = new ArrayList<>();
 
@@ -149,6 +146,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                         logger.info("[" + getClass().getSimpleName() + "] receive message (收到消息，准备过滤，然后处理), topic: {} ,partition: {} ,offset: {}",
                                 record.topic(), record.partition(), record.offset());
                         try {
+                            currentOffsets.put(new TopicPartition(record.topic(), record.partition()), new OffsetAndMetadata(record.offset() + 1, "no metadata"));
                             for (ENDPOINT bizConsumer : bizConsumers) {
                                 dealMessage(bizConsumer, record.value(), record.key());
                             }
@@ -159,7 +157,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
                         try {
                             //record每消费一条就提交一次(性能会低点)
-                            consumer.commitSync();
+                            consumer.commitSync(currentOffsets);
                         } catch (CommitFailedException e) {
                             logger.error("commit failed,will break this for loop", e);
                             break;
@@ -182,7 +180,7 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                 InvocationContextImpl.Factory.removeCurrentInstance();
             }
         }
-        consumer.close(10,TimeUnit.SECONDS);
+        consumer.close(10, TimeUnit.SECONDS);
         logger.info("[{}]::kafka consumer stop running already!", getClass().getSimpleName());
     }
 

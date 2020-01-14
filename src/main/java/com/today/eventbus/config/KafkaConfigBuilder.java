@@ -54,6 +54,7 @@ public abstract class KafkaConfigBuilder {
 
     public static ConsumerConfiguration defaultConsumer(final Properties properties) {
         final ConsumerConfiguration builder = new ConsumerConfiguration();
+        builder.properties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, System.getProperty("max.poll.interval.ms", "60000"));
         builder.withKeyDeserializer(StringDeserializer.class);
         builder.withValueDeserializer(StringDeserializer.class);
         builder.withClientId("Consumer-" + SysEnvUtil.HOST_IP + "-" + UUID.randomUUID().toString());
