@@ -2,7 +2,7 @@ organization := "com.today"
 
 name := "event-bus"
 
-version := "2.1.2-test-SNAPSHOT"
+version := "2.1.2.0-SNAPSHOT"
 
 scalaVersion := "2.12.4"
 
