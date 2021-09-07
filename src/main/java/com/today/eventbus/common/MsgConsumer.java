@@ -34,6 +34,8 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
 
     private static boolean msgRetryEnable = Boolean.valueOf(SoaSystemEnvProperties.get("soa.msg.retry.enable", "true"));
 
+    protected static boolean msgSendRetryTopicEnable = Boolean.valueOf(SoaSystemEnvProperties.get("soa.msg.send.retry.topic.enable","false"));
+
     private Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
     private List<ENDPOINT> bizConsumers = new ArrayList<>();
@@ -223,7 +225,9 @@ public abstract class MsgConsumer<KEY, VALUE, ENDPOINT> implements Runnable {
                             try {
                                 retryStrategy.execute(() -> dealMessage(endpoint, record.value(), record.key()));
                             } catch (Exception e) {
-                                sendToRetryTopic(record.key(), record.value());
+                                if(msgSendRetryTopicEnable) {
+                                    sendToRetryTopic(record.key(), record.value());
+                                }
                             }
                         });
                     }

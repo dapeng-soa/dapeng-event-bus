@@ -121,7 +121,9 @@ public class MsgKafkaConsumer extends MsgConsumer<Long, byte[], ConsumerEndpoint
                         logger.error("[" + getClass().getSimpleName() + "]<->[实例化事件 {" + eventType + "} 对应的编解码器失败]:" + e.getMessage(), e);
                     }
                     try {
-                        sendToRetryTopic(keyId, message);
+                        if(msgSendRetryTopicEnable) {
+                            sendToRetryTopic(keyId, message);
+                        }
                     } catch (Exception re) {
                         logger.error("[" + getClass().getSimpleName() + "] 发送到重试队列失败:" + re.getMessage(), re);
                     }

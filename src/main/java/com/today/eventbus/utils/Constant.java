@@ -23,10 +23,20 @@ public interface Constant {
     /**
      * per poll max message size
      */
-    String MAX_POLL_SIZE = "50";
+    String KEY_MAX_POLL_SIZE = "max.poll.size";
+
+    String MAX_POLL_SIZE = get(KEY_MAX_POLL_SIZE, "50");
 
     /**
      * isolation
      */
     String ISOLATION_LEVEL = "read_committed";
+
+    static String get(String key, String defaultValue) {
+        String envValue = System.getenv(key.replaceAll("\\.", "_"));
+        if (envValue == null) {
+            return System.getProperty(key, defaultValue);
+        }
+        return envValue;
+    }
 }
